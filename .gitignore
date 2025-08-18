@@ -1,0 +1,76 @@
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+replay_pid*
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Documentation and test files (not needed for deployment)
+*.md
+!README.md
+*.sh
+test-*.sh
+audit-*.sh
+clear-*.sh
+debug-*.sh
+diagnose-*.sh
+quick-*.sh
+start-*.sh
+verify-*.sh
+# Exclude test HTML files but keep frontend HTML
+*.html
+!frontend/*.html
+!frontend/**/*.html
+curl-examples.md
+webauthn_manual_tests.md
+
+# Frontend server (we'll deploy separately)
+frontend/server.py
+
+# Postman collection (not needed for runtime)
+postman/

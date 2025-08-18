@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ['...', 'maven', 'openjdk17']
+
+[phases.build]
+cmds = ['./mvnw clean package -DskipTests']
+
+[phases.start]
+cmd = 'java -Dserver.port=$PORT -Dspring.profiles.active=prod -jar target/authx-mfa-system-1.0.0.jar'

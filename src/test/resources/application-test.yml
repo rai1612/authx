@@ -1,0 +1,40 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    database-platform: org.hibernate.dialect.H2Dialect
+  
+  data:
+    redis:
+      host: localhost
+      port: 6370  # Different port for test to avoid conflicts
+  
+  mail:
+    host: localhost
+    port: 2525
+
+jwt:
+  secret: testSecretKey123456789012345678901234567890
+  expiration: 3600000
+  refresh-expiration: 7200000
+
+mfa:
+  otp:
+    expiration: 60
+    max-attempts: 5
+  webauthn:
+    rp-id: localhost
+    rp-name: AuthX Test
+    origin: http://localhost:8080
+
+logging:
+  level:
+    com.authx: DEBUG
+    org.springframework.security: DEBUG

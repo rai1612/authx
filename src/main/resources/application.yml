@@ -1,0 +1,161 @@
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: authx-mfa-system
+  
+  profiles:
+    active: ${SPRING_PROFILE:dev}
+  
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:authx}
+    username: ${DB_USERNAME:authx_user}
+    password: ${DB_PASSWORD:authx_pass}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: ${DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:mySecretKey123456789012345678901234567890}
+  expiration: ${JWT_EXPIRATION:86400000} # 24 hours
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days
+
+# MFA Configuration
+mfa:
+  otp:
+    expiration: ${OTP_EXPIRATION:300} # 5 minutes
+    max-attempts: ${OTP_MAX_ATTEMPTS:3}
+  webauthn:
+    rp-id: ${WEBAUTHN_RP_ID:localhost}
+    rp-name: ${WEBAUTHN_RP_NAME:AuthX MFA System}
+    origin: ${WEBAUTHN_ORIGIN:http://localhost:8080}
+
+# Rate Limiting
+rate-limit:
+  login:
+    capacity: 50
+    refill-tokens: 50
+    refill-period: 60 # seconds
+  otp:
+    capacity: ${OTP_RATE_CAPACITY:50}
+    refill-tokens: ${OTP_RATE_REFILL:1}
+    refill-period: ${OTP_RATE_PERIOD:300} # 5 minutes
+  mfa:
+    # Stricter limits for MFA operations
+    verification:
+      capacity: ${MFA_VERIFY_CAPACITY:50} # 50 attempts
+      refill-tokens: ${MFA_VERIFY_REFILL:1}
+      refill-period: ${MFA_VERIFY_PERIOD:600} # 10 minutes
+    setup:
+      capacity: ${MFA_SETUP_CAPACITY:50} # 50 setup attempts
+      refill-tokens: ${MFA_SETUP_REFILL:1}
+      refill-period: ${MFA_SETUP_PERIOD:900} # 15 minutes
+    preferred-method:
+      capacity: ${MFA_PREFERRED_CAPACITY:50} # 50 method changes
+      refill-tokens: ${MFA_PREFERRED_REFILL:2}
+      refill-period: ${MFA_PREFERRED_PERIOD:3600} # 1 hour
+  password-reset:
+    capacity: ${PASSWORD_RESET_CAPACITY:50} # 50 reset attempts
+    refill-tokens: ${PASSWORD_RESET_REFILL:1}
+    refill-period: ${PASSWORD_RESET_PERIOD:900} # 15 minutes
+
+# SMS Configuration
+sms:
+  enabled: ${SMS_ENABLED:true}
+  provider: ${SMS_PROVIDER:mock}
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    from-number: ${TWILIO_FROM_NUMBER:}
+
+# Logging
+logging:
+  level:
+    com.authx: ${LOG_LEVEL:INFO}
+    org.springframework.security: ${SECURITY_LOG_LEVEL:WARN}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Swagger/OpenAPI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+
+---
+# Development Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create
+
+logging:
+  level:
+    com.authx: DEBUG
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+logging:
+  level:
+    com.authx: WARN
+    org.springframework.security: ERROR

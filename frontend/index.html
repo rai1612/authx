@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuthX - Secure Authentication System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="navbar" id="navbar">
+            <div class="nav-brand" onclick="showHome()" style="cursor: pointer;" title="Go to Home">
+                <h1><i class="fas fa-shield-alt"></i> AuthX</h1>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+                    <i class="fas fa-moon" id="theme-icon"></i>
+                </button>
+                <a href="#" class="nav-link" onclick="showLogin()">Login</a>
+                <a href="#" class="nav-link" onclick="showRegister()">Register</a>
+                <a href="#" class="nav-link" onclick="showDashboard()" id="dashboard-link" style="display: none;">Dashboard</a>
+                <a href="#" class="nav-link" onclick="showAdmin()" id="admin-link" style="display: none;">Admin</a>
+                <a href="#" class="nav-link" onclick="logout()" id="logout-link" style="display: none;">Logout</a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Welcome Section -->
+            <section id="welcome-section" class="section active">
+                <div class="hero">
+                    <h1>Welcome to AuthX</h1>
+                    <p>Production-grade Multi-Factor Authentication System</p>
+                    <div class="features">
+                        <div class="feature-card">
+                            <i class="fas fa-fingerprint"></i>
+                            <h3>WebAuthn Support</h3>
+                            <p>Biometric authentication with Touch ID, Face ID, and security keys</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-mobile-alt"></i>
+                            <h3>Multi-Factor Auth</h3>
+                            <p>Email OTP, SMS, and WebAuthn for maximum security</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>Enterprise Security</h3>
+                            <p>JWT tokens, rate limiting, and comprehensive audit logging</p>
+                        </div>
+                    </div>
+                    <div class="cta-buttons">
+                        <button class="btn btn-primary" onclick="showLogin()">Get Started</button>
+                        <button class="btn btn-secondary" onclick="showRegister()">Create Account</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Login Section -->
+            <section id="login-section" class="section">
+                <div class="auth-container">
+                    <div class="auth-card">
+                        <h2><i class="fas fa-sign-in-alt"></i> Sign In</h2>
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label for="login-email">Email</label>
+                                <input type="email" id="login-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="login-password">Password</label>
+                                <input type="password" id="login-password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Sign In</button>
+                        </form>
+                        <div class="auth-links">
+                            <p><a href="#" onclick="showForgotPassword()">Forgot your password?</a></p>
+                            <p>Don't have an account? <a href="#" onclick="showRegister()">Sign up</a></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Register Section -->
+            <section id="register-section" class="section">
+                <div class="auth-container">
+                    <div class="auth-card">
+                        <h2><i class="fas fa-user-plus"></i> Create Account</h2>
+                        <form id="register-form">
+                            <div class="form-group">
+                                <label for="register-username">Username</label>
+                                <input type="text" id="register-username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-email">Email</label>
+                                <input type="email" id="register-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-password">Password</label>
+                                <input type="password" id="register-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-phone">Phone Number</label>
+                                <input type="tel" id="register-phone" placeholder="+1234567890">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Create Account</button>
+                        </form>
+                        <div class="auth-links">
+                            <p>Already have an account? <a href="#" onclick="showLogin()">Sign in</a></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Forgot Password Section -->
+            <section id="forgot-password-section" class="section">
+                <div class="auth-container">
+                    <div class="auth-card">
+                        <h2><i class="fas fa-key"></i> Reset Password</h2>
+                        <p>Enter your email address and we'll send you a link to reset your password.</p>
+                        <form id="forgot-password-form">
+                            <div class="form-group">
+                                <label for="forgot-email">Email</label>
+                                <input type="email" id="forgot-email" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Send Reset Link</button>
+                        </form>
+                        <div class="auth-links">
+                            <p>Remember your password? <a href="#" onclick="showLogin()">Sign in</a></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reset Password Section -->
+            <section id="reset-password-section" class="section">
+                <div class="auth-container">
+                    <div class="auth-card">
+                        <h2><i class="fas fa-lock"></i> Set New Password</h2>
+                        <p>Please enter your new password below.</p>
+                        <form id="reset-password-form">
+                            <input type="hidden" id="reset-token">
+                            <div class="form-group">
+                                <label for="new-password">New Password</label>
+                                <input type="password" id="new-password" required minlength="8">
+                                <small>Password must be at least 8 characters long</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirm-password">Confirm Password</label>
+                                <input type="password" id="confirm-password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update Password</button>
+                        </form>
+                        <div class="auth-links">
+                            <p><a href="#" onclick="showLogin()">Back to login</a></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MFA Challenge Section -->
+            <section id="mfa-section" class="section">
+                <div class="auth-container">
+                    <div class="auth-card">
+                        <h2><i class="fas fa-shield-alt"></i> Multi-Factor Authentication</h2>
+                        
+                        <!-- Method Selection View -->
+                        <div id="mfa-method-selection" class="mfa-method-selection">
+                            <h3>Available Authentication Methods</h3>
+                            <div class="mfa-methods-grid" id="mfa-methods-container">
+                                <!-- Methods will be loaded here dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Verification View -->
+                        <div id="mfa-verification-view" class="mfa-verification-view" style="display: none;">
+                            <div class="verification-header">
+                                <button class="btn btn-secondary btn-back" onclick="backToMethodSelection()">
+                                    <i class="fas fa-arrow-left"></i> Back
+                                </button>
+                                <h3 id="verification-title">Verify Authentication</h3>
+                            </div>
+                            
+                            <!-- WebAuthn Verification -->
+                            <div id="webauthn-verification" class="verification-content" style="display: none;">
+                                <div class="verification-info">
+                                    <i class="fas fa-fingerprint verification-icon"></i>
+                                    <h4>WebAuthn Verification</h4>
+                                    <p>Use your biometric device or security key to authenticate.</p>
+                                </div>
+                                <div class="verification-actions">
+                                    <button class="btn btn-primary btn-large" onclick="performWebAuthnAuth()">
+                                        <i class="fas fa-fingerprint"></i> Authenticate Now
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Email OTP Verification -->
+                            <div id="email-otp-verification" class="verification-content" style="display: none;">
+                                <div class="verification-info">
+                                    <i class="fas fa-envelope verification-icon"></i>
+                                    <h4>Email OTP Verification</h4>
+                                    <p id="email-otp-description">Enter the 6-digit code sent to your email.</p>
+                                </div>
+                                <div class="verification-form">
+                                    <div class="form-group">
+                                        <label for="email-otp-code">Verification Code</label>
+                                        <input type="text" id="email-otp-code" placeholder="Enter 6-digit code" maxlength="6" class="otp-input">
+                                    </div>
+                                    <div class="verification-actions">
+                                        <button class="btn btn-primary" onclick="verifyEmailOTP()">
+                                            <i class="fas fa-check"></i> Verify Code
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="sendEmailOTP()">
+                                            <i class="fas fa-redo"></i> Resend Code
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SMS OTP Verification -->
+                            <div id="sms-otp-verification" class="verification-content" style="display: none;">
+                                <div class="verification-info">
+                                    <i class="fas fa-sms verification-icon"></i>
+                                    <h4>SMS OTP Verification</h4>
+                                    <p id="sms-otp-description">Enter the 6-digit code sent to your phone.</p>
+                                </div>
+                                <div class="verification-form">
+                                    <div class="form-group">
+                                        <label for="sms-otp-code">Verification Code</label>
+                                        <input type="text" id="sms-otp-code" placeholder="Enter 6-digit code" maxlength="6" class="otp-input">
+                                    </div>
+                                    <div class="verification-actions">
+                                        <button class="btn btn-primary" onclick="verifySmsOTP()">
+                                            <i class="fas fa-check"></i> Verify Code
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="sendSmsOTP()">
+                                            <i class="fas fa-redo"></i> Resend Code
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="section">
+                <div class="dashboard-container">
+                    <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+                    
+                    <!-- User Profile -->
+                    <div class="dashboard-card">
+                        <div class="profile-header">
+                            <h3><i class="fas fa-user"></i> Profile</h3>
+                            <div class="profile-actions">
+                                <button class="btn btn-primary" onclick="toggleProfileEdit()" id="edit-profile-btn">
+                                    <i class="fas fa-edit"></i> Edit Profile
+                                </button>
+                                <button class="btn btn-secondary" onclick="showChangePasswordModal()">
+                                    <i class="fas fa-key"></i> Change Password
+                                </button>
+                            </div>
+                        </div>
+                        <div id="user-profile">
+                            <!-- User info will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- MFA Management -->
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-shield-alt"></i> Multi-Factor Authentication</h3>
+                        <div id="mfa-status">
+                            <!-- MFA status will be loaded here -->
+                        </div>
+                        
+                        <div class="mfa-actions">
+                            <button class="btn btn-primary" onclick="showWebAuthnSetup()" id="setup-webauthn-btn">
+                                <i class="fas fa-fingerprint"></i> Setup WebAuthn
+                            </button>
+                            <button class="btn btn-secondary" onclick="testEmailOTP()">
+                                <i class="fas fa-envelope"></i> Test Email OTP
+                            </button>
+                            <button class="btn btn-secondary" onclick="toggleMFA()" id="toggle-mfa-btn">
+                                <i class="fas fa-power-off"></i> Toggle MFA
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- WebAuthn Credentials -->
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-key"></i> WebAuthn Credentials</h3>
+                        <div id="webauthn-credentials">
+                            <!-- Credentials will be loaded here -->
+                        </div>
+                        <button class="btn btn-primary" onclick="addWebAuthnCredential()">
+                            <i class="fas fa-plus"></i> Add New Credential
+                        </button>
+                    </div>
+
+<!-- Audit Logs -->
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                        <div id="audit-logs">
+                            <!-- Audit logs will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Admin Section -->
+            <section id="admin-section" class="section">
+                <div class="admin-container">
+                    <h2><i class="fas fa-cogs"></i> Administration Panel</h2>
+                    
+                    <!-- Admin Navigation -->
+                    <div class="admin-nav">
+                        <button class="admin-tab-btn active" onclick="showAdminTab('dashboard')">
+                            <i class="fas fa-chart-bar"></i> Dashboard
+                        </button>
+                        <button class="admin-tab-btn" onclick="showAdminTab('users')">
+                            <i class="fas fa-users"></i> Users
+                        </button>
+                        <button class="admin-tab-btn" onclick="showAdminTab('roles')">
+                            <i class="fas fa-user-tag"></i> Roles
+                        </button>
+                        <button class="admin-tab-btn" onclick="showAdminTab('audit')">
+                            <i class="fas fa-history"></i> Audit Logs
+                        </button>
+                        <button class="admin-tab-btn" onclick="showAdminTab('system')">
+                            <i class="fas fa-server"></i> System
+                        </button>
+                    </div>
+
+                    <!-- Admin Dashboard Tab -->
+                    <div id="admin-dashboard-tab" class="admin-tab active">
+                        <div class="admin-stats">
+                            <div class="stat-card">
+                                <i class="fas fa-users"></i>
+                                <div class="stat-info">
+                                    <h3 id="total-users">-</h3>
+                                    <p>Total Users</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-user-check"></i>
+                                <div class="stat-info">
+                                    <h3 id="active-users">-</h3>
+                                    <p>Active Users</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-lock"></i>
+                                <div class="stat-info">
+                                    <h3 id="locked-users">-</h3>
+                                    <p>Locked Users</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-shield-alt"></i>
+                                <div class="stat-info">
+                                    <h3 id="mfa-users">-</h3>
+                                    <p>MFA Enabled</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-charts">
+                            <div class="chart-card">
+                                <h4><i class="fas fa-user-tag"></i> Role Distribution</h4>
+                                <div id="role-distribution">
+                                    <!-- Role stats will be loaded here -->
+                                </div>
+                            </div>
+                            <div class="chart-card">
+                                <h4><i class="fas fa-chart-line"></i> System Health</h4>
+                                <div id="system-health">
+                                    <!-- System health will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users Management Tab -->
+                    <div id="admin-users-tab" class="admin-tab">
+                        <div class="admin-controls">
+                            <div class="search-controls">
+                                <input type="text" id="user-search" placeholder="Search users..." 
+                                       onkeyup="searchUsers()" class="search-input">
+                                <select id="status-filter" onchange="filterUsers()" class="filter-select">
+                                    <option value="">All Status</option>
+                                    <option value="ACTIVE">Active</option>
+                                    <option value="LOCKED">Locked</option>
+                                </select>
+                            </div>
+                            <div class="bulk-actions">
+                                <button class="btn btn-secondary" onclick="selectAllUsers()">
+                                    <i class="fas fa-check-square"></i> Select All
+                                </button>
+                                <button class="btn btn-warning" onclick="bulkUpdateStatus()">
+                                    <i class="fas fa-edit"></i> Bulk Status
+                                </button>
+                                <button class="btn btn-success" onclick="bulkUnlockUsers()">
+                                    <i class="fas fa-unlock"></i> Bulk Unlock
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="users-table-container">
+                            <table id="users-table" class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="select-all-checkbox" onchange="toggleAllUsers()"></th>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>MFA</th>
+                                        <th>Last Login</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body">
+                                    <!-- Users will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="pagination" id="users-pagination">
+                            <!-- Pagination will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Roles Management Tab -->
+                    <div id="admin-roles-tab" class="admin-tab">
+                        <div class="admin-controls">
+                            <button class="btn btn-primary" onclick="showCreateRoleModal()">
+                                <i class="fas fa-plus"></i> Create Role
+                            </button>
+                        </div>
+                        
+                        <div class="roles-grid" id="roles-grid">
+                            <!-- Roles will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Audit Logs Tab -->
+                    <div id="admin-audit-tab" class="admin-tab">
+                        <div class="admin-controls">
+                            <div class="audit-filters">
+                                <select id="event-type-filter" onchange="filterAuditLogs()" class="filter-select">
+                                    <option value="">All Events</option>
+                                    <!-- Event types will be loaded dynamically -->
+                                </select>
+                                <input type="date" id="start-date-filter" onchange="filterAuditLogs()" class="date-filter">
+                                <input type="date" id="end-date-filter" onchange="filterAuditLogs()" class="date-filter">
+                                <button class="btn btn-secondary" onclick="clearAuditFilters()">
+                                    <i class="fas fa-times"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="audit-table-container">
+                            <table id="audit-table" class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>User</th>
+                                        <th>Event Type</th>
+                                        <th>Description</th>
+                                        <th>IP Address</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="audit-table-body">
+                                    <!-- Audit logs will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="pagination" id="audit-pagination">
+                            <!-- Pagination will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- System Tab -->
+                    <div id="admin-system-tab" class="admin-tab">
+                        <div class="system-info">
+                            <div class="system-card">
+                                <h4><i class="fas fa-database"></i> Database Status</h4>
+                                <div id="database-status">
+                                    <!-- Database status will be loaded here -->
+                                </div>
+                            </div>
+                            <div class="system-card">
+                                <h4><i class="fas fa-memory"></i> Memory Usage</h4>
+                                <div id="memory-usage">
+                                    <!-- Memory usage will be loaded here -->
+                                </div>
+                            </div>
+                            <div class="system-card">
+                                <h4><i class="fas fa-activity"></i> Recent Activity</h4>
+                                <div id="recent-activity">
+                                    <!-- Recent activity will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="system-actions">
+                            <button class="btn btn-warning" onclick="refreshSystemHealth()">
+                                <i class="fas fa-sync"></i> Refresh Health
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Modals -->
+        <!-- WebAuthn Setup Modal -->
+        <div id="webauthn-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('webauthn-modal')">&times;</span>
+                <h3><i class="fas fa-fingerprint"></i> Setup Biometric Authentication</h3>
+                <p>Set up secure biometric authentication using your device's built-in security features.</p>
+                
+                <!-- Authenticator Type Selection -->
+                <div class="form-group">
+                    <label>Authentication Method</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="authenticator-type" value="platform" checked>
+                            <span><i class="fas fa-fingerprint"></i> Device Biometrics (Fingerprint/Face ID)</span>
+                            <small>Use your device's built-in fingerprint or face recognition</small>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="authenticator-type" value="cross-platform">
+                            <span><i class="fas fa-usb"></i> Security Key/Passkey</span>
+                            <small>Use a USB security key or cloud-synced passkey</small>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="credential-nickname">Device Nickname</label>
+                    <input type="text" id="credential-nickname" placeholder="e.g., My MacBook TouchID">
+                    <small>Give this credential a memorable name</small>
+                </div>
+                
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>What happens next?</strong>
+                        <p id="webauthn-instruction">Your browser will prompt you to use your device's fingerprint or face recognition to create a secure credential.</p>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="registerWebAuthn()">
+                    <i class="fas fa-fingerprint"></i> <span id="register-btn-text">Setup Biometric Authentication</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Admin Modals -->
+        <!-- Create Role Modal -->
+        <div id="create-role-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('create-role-modal')">&times;</span>
+                <h3><i class="fas fa-user-tag"></i> Create New Role</h3>
+                <form id="create-role-form">
+                    <div class="form-group">
+                        <label for="role-name">Role Name</label>
+                        <input type="text" id="role-name" placeholder="e.g., MODERATOR" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="role-description">Description</label>
+                        <textarea id="role-description" placeholder="Role description..." required></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('create-role-modal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Role</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit User Modal -->
+        <div id="edit-user-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('edit-user-modal')">&times;</span>
+                <h3><i class="fas fa-user-edit"></i> Edit User</h3>
+                <form id="edit-user-form">
+                    <input type="hidden" id="edit-user-id">
+                    <input type="hidden" id="edit-user-email">
+                    
+                    <!-- Status Management -->
+                    <div class="form-group">
+                        <label for="edit-user-status">User Status</label>
+                        <select id="edit-user-status" required>
+                            <option value="ACTIVE">Active - Can login and use the system</option>
+                            <option value="LOCKED">Locked - Cannot login (blocked access)</option>
+                        </select>
+                        <small class="form-help">
+                            <strong>Active:</strong> User has normal access to the system<br>
+                            <strong>Locked:</strong> User cannot login and is completely blocked from accessing the system
+                        </small>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="form-group">
+                        <label>Quick Actions</label>
+                        <div class="quick-actions">
+                            <button type="button" class="btn btn-sm btn-success" onclick="AdminPanel.quickUnlockUser()">
+                                <i class="fas fa-unlock"></i> Unlock & Reset Failed Attempts
+                            </button>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="AdminPanel.resetUserRateLimit()">
+                                <i class="fas fa-clock"></i> Reset Rate Limits
+                            </button>
+                            <button type="button" class="btn btn-sm btn-info" onclick="AdminPanel.activateUser()">
+                                <i class="fas fa-check"></i> Activate User
+                            </button>
+                        </div>
+                        <small class="form-help">
+                            These actions are applied immediately and don't require saving the form.
+                        </small>
+                    </div>
+
+                    <!-- Role Management -->
+                    <div class="form-group">
+                        <label for="edit-user-roles">Roles</label>
+                        <div id="edit-user-roles" class="checkbox-group">
+                            <!-- Roles will be loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('edit-user-modal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bulk Status Modal -->
+        <div id="bulk-status-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('bulk-status-modal')">&times;</span>
+                <h3><i class="fas fa-users-cog"></i> Bulk Update Status</h3>
+                <p>Update status for <span id="selected-user-count">0</span> selected users.</p>
+                <div class="form-group">
+                    <label for="bulk-status">New Status</label>
+                    <select id="bulk-status" required>
+                        <option value="ACTIVE">Active - Can login and use the system</option>
+                        <option value="LOCKED">Locked - Cannot login (blocked access)</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('bulk-status-modal')">Cancel</button>
+                    <button type="button" class="btn btn-warning" onclick="confirmBulkStatusUpdate()">Update Status</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MFA Verification Modal for Password Change -->
+        <div id="mfa-password-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('mfa-password-modal')">&times;</span>
+                <h3><i class="fas fa-shield-alt"></i> MFA Verification Required</h3>
+                <p>Since MFA is enabled on your account, please provide verification to change your password.</p>
+                
+                <form id="mfa-password-form">
+                    <div class="form-group">
+                        <label for="mfa-password-method">
+                            <i class="fas fa-star"></i>
+                            Verification Method
+                        </label>
+                        <select id="mfa-password-method" name="mfaMethod" required>
+                            <option value="">Use preferred method (recommended)</option>
+                            <option value="OTP_EMAIL">Email OTP</option>
+                            <option value="OTP_SMS">SMS OTP</option>
+                            <option value="WEBAUTHN">WebAuthn</option>
+                        </select>
+                    </div>
+                    
+                    <div id="mfa-password-otp-section" class="otp-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="mfa-password-code">
+                                <i class="fas fa-shield-alt"></i>
+                                Verification Code
+                            </label>
+                            <input type="text" id="mfa-password-code" name="mfaCode" placeholder="Enter 6-digit code" maxlength="6">
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="sendMfaCodeForPasswordChange()">
+                            <i class="fas fa-paper-plane"></i> Send Code
+                        </button>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('mfa-password-modal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Verify & Change Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Change Password Modal -->
+        <div id="change-password-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('change-password-modal')">&times;</span>
+                <h3><i class="fas fa-key"></i> Change Password</h3>
+                <p>Update your account password securely.</p>
+                
+                <form id="change-password-form" class="change-password-form">
+                    <div class="form-group">
+                        <label for="current-password">
+                            <i class="fas fa-lock"></i>
+                            Current Password
+                        </label>
+                        <input type="password" id="current-password" name="currentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password-change">
+                            <i class="fas fa-key"></i>
+                            New Password
+                        </label>
+                        <input type="password" id="new-password-change" name="newPassword" required minlength="8">
+                        <small class="form-help">Password must be at least 8 characters long</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-new-password">
+                            <i class="fas fa-check"></i>
+                            Confirm New Password
+                        </label>
+                        <input type="password" id="confirm-new-password" required>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('change-password-modal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Change Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Processing...</p>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <!-- Preferred MFA Method Modal -->
+    <div id="preferred-method-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('preferred-method-modal')">&times;</span>
+            <h3><i class="fas fa-star"></i> Preferred Authentication Method</h3>
+            <p>Choose your default method for multi-factor authentication:</p>
+            
+            <div class="preferred-method-options">
+                <label class="method-option">
+                    <input type="radio" name="modal-preferred-method" value="OTP_EMAIL">
+                    <span class="method-info">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <strong>Email OTP</strong>
+                            <small>Receive codes via email</small>
+                        </div>
+                    </span>
+                </label>
+                <label class="method-option">
+                    <input type="radio" name="modal-preferred-method" value="OTP_SMS">
+                    <span class="method-info">
+                        <i class="fas fa-sms"></i>
+                        <div>
+                            <strong>SMS OTP</strong>
+                            <small>Receive codes via text message</small>
+                        </div>
+                    </span>
+                </label>
+                <label class="method-option">
+                    <input type="radio" name="modal-preferred-method" value="WEBAUTHN">
+                    <span class="method-info">
+                        <i class="fas fa-fingerprint"></i>
+                        <div>
+                            <strong>WebAuthn</strong>
+                            <small>Biometric or security key</small>
+                        </div>
+                    </span>
+                </label>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('preferred-method-modal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updatePreferredMethodFromModal()" id="modal-update-preferred-btn">
+                    <i class="fas fa-check"></i> Update Preferred Method
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/webauthn.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/auth-password.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
