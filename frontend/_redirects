@@ -1,0 +1,5 @@
+# Redirect API calls to backend
+/api/* https://authx-backend.railway.app/api/:splat 200
+
+# Single Page Application fallback
+/* /index.html 200
