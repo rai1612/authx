@@ -9,9 +9,12 @@ spring:
   application:
     name: authx-mfa-system
   
-  # PostgreSQL configuration handled by RailwayDataSourceConfig
-  # datasource configuration is programmatically set using DATABASE_URL
+  # PostgreSQL configuration using Railway's environment variables
   datasource:
+    url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
+    username: ${PGUSER}
+    password: ${PGPASSWORD}
+    driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
       minimum-idle: 1
@@ -40,7 +43,9 @@ spring:
   # Redis configuration using Railway environment variables
   data:
     redis:
-      url: ${REDIS_URL}
+      host: ${REDISHOST}
+      port: ${REDISPORT}
+      password: ${REDISPASSWORD}
       timeout: 5000ms
       connect-timeout: 10000ms
       lettuce:
