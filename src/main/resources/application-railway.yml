@@ -1,5 +1,7 @@
 server:
   port: ${PORT:8080}
+  # Accept health checks from Railway
+  forward-headers-strategy: framework
   servlet:
     context-path: /api/v1
 
@@ -121,24 +123,14 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
-# Actuator Configuration
+# Actuator Configuration - Minimal for Railway
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: info
       base-path: /actuator
-  endpoint:
-    health:
-      show-details: when-authorized
+  # Disable all health checks - use custom RailwayHealthController instead
   health:
-    # Disable database and Redis health checks for Railway startup
-    db:
+    defaults:
       enabled: false
-    redis:
-      enabled: false
-    # Keep basic health indicators
-    ping:
-      enabled: true
-    diskspace:
-      enabled: true
