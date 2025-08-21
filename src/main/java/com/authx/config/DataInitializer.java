@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
-// Disable data initialization for Railway deployment to speed up startup
+// Temporarily disable for Railway debugging
 // @Component
 @RequiredArgsConstructor
 @Slf4j

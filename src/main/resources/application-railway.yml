@@ -2,8 +2,9 @@ server:
   port: ${PORT:8080}
   # Accept health checks from Railway
   forward-headers-strategy: framework
-  servlet:
-    context-path: /api/v1
+  # Temporarily remove context path to debug Railway health checks
+  # servlet:
+  #   context-path: /api/v1
 
 spring:
   application:
