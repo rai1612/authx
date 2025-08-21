@@ -123,14 +123,25 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
-# Actuator Configuration - Minimal for Railway
+# Actuator Configuration for Railway  
 management:
+  # Put actuator at ROOT level (not under /api/v1) so Railway can access it
+  server:
+    port: ${PORT:8080}
+    base-path: /
   endpoints:
     web:
       exposure:
-        include: info
+        include: health,info
       base-path: /actuator
-  # Disable all health checks - use custom RailwayHealthController instead
+  endpoint:
+    health:
+      show-details: always
+  # Simple health indicator that doesn't depend on external services
   health:
     defaults:
+      enabled: true
+    db:
+      enabled: false
+    redis:
       enabled: false
