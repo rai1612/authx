@@ -11,27 +11,34 @@ spring:
   
   # PostgreSQL configuration using Railway environment variables
   datasource:
-    url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
-    username: ${PGUSER}
-    password: ${PGPASSWORD}
+    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:railway}
+    username: ${PGUSER:postgres}
+    password: ${PGPASSWORD:password}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 5
       minimum-idle: 1
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
+      connection-timeout: 60000
+      idle-timeout: 300000
+      max-lifetime: 1200000
       initialization-fail-timeout: -1  # Don't fail if DB not ready
       connection-test-query: SELECT 1
+      leak-detection-threshold: 300000
+      validation-timeout: 5000
   
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: false
+        format_sql: true
+        hbm2ddl:
+          auto: update
+        jdbc:
+          lob:
+            non_contextual_creation: true
   
   # Redis configuration using Railway environment variables
   data:
@@ -112,11 +119,16 @@ sms:
     auth-token: ${TWILIO_AUTH_TOKEN:}
     from-number: ${TWILIO_FROM_NUMBER:}
 
-# Logging
+# Logging - Enhanced for Railway debugging
 logging:
   level:
-    com.authx: INFO
+    com.authx: DEBUG
     org.springframework.security: WARN
+    org.hibernate: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.zaxxer.hikari: DEBUG
+    org.springframework.jdbc.datasource: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
