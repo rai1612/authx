@@ -13,8 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
-// Temporarily disable for Railway debugging
-// @Component
+@Component
 @RequiredArgsConstructor
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
