@@ -10,9 +10,6 @@ spring:
   application:
     name: authx-mfa-system
   
-  profiles:
-    active: railway
-  
   # PostgreSQL configuration using Railway environment variables
   datasource:
     url: ${DATABASE_URL}
