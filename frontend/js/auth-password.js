@@ -169,67 +169,9 @@ function setupChangePasswordForm() {
 }
 
 /**
- * Update MFA verification section visibility
- */
-function updateMfaVerificationVisibility() {
-    // This function is deprecated - using modal approach now
-    console.log('updateMfaVerificationVisibility called - now using modal approach');
-    return;
-    
-    // Get the latest MFA status
-    const mfaEnabled = Dashboard.userProfile?.mfaEnabled || 
-                      Dashboard.mfaStatus?.mfaEnabled || 
-                      false;
-    
-    const isCurrentlyVisible = mfaSection.style.display !== 'none';
-    
-    if (mfaEnabled) {
-        if (!isCurrentlyVisible) {
-            // Show with fade-in animation
-            mfaSection.style.display = 'block';
-            mfaSection.style.opacity = '0';
-            mfaSection.style.transform = 'translateY(-10px)';
-            
-            // Trigger animation
-            setTimeout(() => {
-                mfaSection.style.transition = 'all 0.3s ease';
-                mfaSection.style.opacity = '1';
-                mfaSection.style.transform = 'translateY(0)';
-            }, 10);
-            
-            // Show a subtle notification
-            showToast('MFA verification is now required for password changes', 'info');
-        }
-        
-        // Update MFA method options based on available methods
-        updateMfaMethodOptions();
-    } else {
-        if (isCurrentlyVisible) {
-            // Hide with fade-out animation
-            mfaSection.style.transition = 'all 0.3s ease';
-            mfaSection.style.opacity = '0';
-            mfaSection.style.transform = 'translateY(-10px)';
-            
-            setTimeout(() => {
-                mfaSection.style.display = 'none';
-                mfaSection.style.transition = '';
-                mfaSection.style.transform = '';
-            }, 300);
-            
-            // Show a subtle notification
-            showToast('MFA verification is no longer required for password changes', 'info');
-        }
-        
-        // Clear any MFA input values when hiding
-        const mfaCodeInput = document.getElementById('mfa-code-input');
-        const mfaMethodSelect = document.getElementById('mfa-method-select');
-        if (mfaCodeInput) mfaCodeInput.value = '';
-        if (mfaMethodSelect) mfaMethodSelect.value = '';
-    }
-}
-
-/**
  * Update MFA method options based on available methods
+ * Note: This function is kept for potential future use but is currently unused
+ * as the modal-based approach handles MFA method selection directly
  */
 function updateMfaMethodOptions() {
     const mfaMethodSelect = document.getElementById('mfa-method-select');

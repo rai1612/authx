@@ -7,8 +7,8 @@ const CONFIG = {
         if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
             return 'http://localhost:8080/api/v1';
         }
-        // Production environment - update this with your Railway URL
-        return window.BACKEND_URL || 'https://your-app-name.railway.app/api/v1';
+        // Production environment - update this with your Render backend URL
+        return window.BACKEND_URL || 'https://your-app-name.onrender.com/api/v1';
     })(),
     
     // WebAuthn Configuration

@@ -14,11 +14,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -27,6 +29,9 @@ public class SecurityConfig {
     
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    
+    @Value("${cors.allowed-origins:http://localhost:*,https://*.vercel.app}")
+    private String allowedOrigins;
     
     public SecurityConfig(JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
@@ -76,8 +81,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "https://*.authx.com"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        
+        // Parse allowed origins from environment variable (comma-separated)
+        // Default: localhost for dev, vercel.app for production
+        List<String> originPatterns = Arrays.asList(allowedOrigins.split(","));
+        configuration.setAllowedOriginPatterns(originPatterns);
+        
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

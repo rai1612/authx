@@ -51,8 +51,10 @@ Thumbs.db
 .env.production
 
 # Documentation and test files (not needed for deployment)
+# Keep README files
 *.md
 !README.md
+!**/README.md
 *.sh
 test-*.sh
 audit-*.sh
@@ -68,9 +70,6 @@ verify-*.sh
 !frontend/**/*.html
 curl-examples.md
 webauthn_manual_tests.md
-
-# Frontend server (we'll deploy separately)
-frontend/server.py
 
 # Postman collection (not needed for runtime)
 postman/

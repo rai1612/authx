@@ -1,0 +1,44 @@
+# Render Blueprint Configuration
+# This file allows you to define your services in code
+# See: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: authx-backend
+    runtime: java
+    plan: free
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -Dserver.port=$PORT -Dspring.profiles.active=render -jar target/authx-mfa-system-1.0.0.jar
+    healthCheckPath: /api/v1/actuator/health
+    envVars:
+      - key: SPRING_PROFILE
+        value: render
+      - key: DATABASE_URL
+        sync: false  # Set this in Render dashboard from Neon.tech connection string
+      - key: REDIS_URL
+        sync: false  # Set this in Render dashboard (Render Redis or external)
+      - key: JWT_SECRET
+        generateValue: true  # Render will generate a secure random value
+      - key: JWT_EXPIRATION
+        value: 86400000
+      - key: JWT_REFRESH_EXPIRATION
+        value: 604800000
+      - key: WEBAUTHN_RP_ID
+        sync: false  # Set to your domain (e.g., your-app.vercel.app)
+      - key: WEBAUTHN_RP_NAME
+        value: AuthX MFA System
+      - key: WEBAUTHN_ORIGIN
+        sync: false  # Set to your Render backend URL (e.g., https://your-app.onrender.com)
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false  # Set to your Vercel frontend URL (e.g., https://your-app.vercel.app,https://*.vercel.app)
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_USERNAME
+        sync: false  # Set your email
+      - key: MAIL_PASSWORD
+        sync: false  # Set your email app password
+      - key: DDL_AUTO
+        value: update
+

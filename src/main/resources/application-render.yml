@@ -11,32 +11,39 @@ spring:
     active: render
   
   datasource:
+    # Neon.tech provides DATABASE_URL in format: postgresql://user:password@host:port/dbname
     url: ${DATABASE_URL}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 5
-      minimum-idle: 1
+      maximum-pool-size: 10
+      minimum-idle: 2
       connection-timeout: 20000
       idle-timeout: 300000
       max-lifetime: 1200000
   
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${DDL_AUTO:update}
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
+        jdbc:
+          batch_size: 20
+          order_inserts: true
+          order_updates: true
   
   data:
     redis:
+      # Render Redis or external Redis URL
+      # Format: redis://:password@host:port or redis://host:port
       url: ${REDIS_URL}
       timeout: 2000ms
       lettuce:
         pool:
-          max-active: 5
-          max-idle: 2
+          max-active: 8
+          max-idle: 4
           min-idle: 1
   
   mail:
@@ -54,36 +61,36 @@ spring:
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:86400000}
-  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  expiration: ${JWT_EXPIRATION:86400000} # 24 hours
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days
 
 # MFA Configuration
 mfa:
   otp:
-    expiration: ${OTP_EXPIRATION:300}
+    expiration: ${OTP_EXPIRATION:300} # 5 minutes
     max-attempts: ${OTP_MAX_ATTEMPTS:3}
   webauthn:
     rp-id: ${WEBAUTHN_RP_ID}
     rp-name: ${WEBAUTHN_RP_NAME:AuthX MFA System}
     origin: ${WEBAUTHN_ORIGIN}
 
-# Rate Limiting
+# Rate Limiting (production settings)
 rate-limit:
   login:
-    capacity: 50
-    refill-tokens: 5
+    capacity: 100
+    refill-tokens: 10
     refill-period: 60
   otp:
-    capacity: 20
+    capacity: 50
     refill-tokens: 1
     refill-period: 300
   mfa:
     verification:
-      capacity: 20
+      capacity: 30
       refill-tokens: 1
       refill-period: 600
     setup:
-      capacity: 10
+      capacity: 20
       refill-tokens: 1
       refill-period: 900
     preferred-method:
@@ -91,7 +98,7 @@ rate-limit:
       refill-tokens: 1
       refill-period: 3600
   password-reset:
-    capacity: 10
+    capacity: 20
     refill-tokens: 1
     refill-period: 900
 
@@ -99,12 +106,17 @@ rate-limit:
 sms:
   enabled: ${SMS_ENABLED:false}
   provider: ${SMS_PROVIDER:mock}
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    from-number: ${TWILIO_FROM_NUMBER:}
 
 # Logging
 logging:
   level:
     com.authx: INFO
     org.springframework.security: WARN
+    org.hibernate.SQL: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
@@ -115,13 +127,18 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+# CORS Configuration
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://*.vercel.app,https://*.onrender.com}
+
 # Actuator Configuration
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
       base-path: /actuator
   endpoint:
     health:
-      show-details: never
+      show-details: when-authorized
+
