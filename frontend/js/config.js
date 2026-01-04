@@ -8,9 +8,9 @@ const CONFIG = {
             return 'http://localhost:8080/api/v1';
         }
         // Production environment - update this with your Render backend URL
-        return window.BACKEND_URL || 'https://your-app-name.onrender.com/api/v1';
+        return window.BACKEND_URL || 'https://authx-backend-n1ls.onrender.com';
     })(),
-    
+
     // WebAuthn Configuration
     WEBAUTHN: {
         RP_ID: (() => {
@@ -23,7 +23,7 @@ const CONFIG = {
         ORIGIN: window.location.origin,
         TIMEOUT: 300000, // 5 minutes
     },
-    
+
     // Token storage keys
     STORAGE_KEYS: {
         ACCESS_TOKEN: 'authx_access_token',
@@ -31,7 +31,7 @@ const CONFIG = {
         MFA_TOKEN: 'authx_mfa_token',
         USER_INFO: 'authx_user_info'
     },
-    
+
     // API Endpoints
     ENDPOINTS: {
         // Auth endpoints
@@ -42,28 +42,28 @@ const CONFIG = {
         MFA_VERIFY: '/auth/mfa/verify',
         FORGOT_PASSWORD: '/auth/forgot-password',
         RESET_PASSWORD: '/auth/reset-password',
-        
+
         // User endpoints
         USER_PROFILE: '/users/profile',
         USER_AUDIT_LOGS: '/users/audit-logs',
         CHANGE_PASSWORD: '/users/change-password',
-        
+
         // MFA endpoints
         MFA_METHODS: '/mfa/methods',
         MFA_ENABLE: '/mfa/enable',
         MFA_DISABLE: '/mfa/disable',
         MFA_PREFERRED_METHOD: '/mfa/preferred-method',
-        
+
         // WebAuthn endpoints
         WEBAUTHN_START_REGISTRATION: '/mfa/setup/webauthn/start',
         WEBAUTHN_FINISH_REGISTRATION: '/mfa/setup/webauthn/finish',
         WEBAUTHN_CHALLENGE: '/mfa/webauthn/challenge',
         WEBAUTHN_DELETE: '/mfa/webauthn',
-        
+
         // OTP endpoints
         OTP_SEND: '/mfa/setup/otp/send',
         MFA_SEND_OTP: '/mfa/setup/otp/send',
-        
+
         // Admin endpoints
         ADMIN_STATS: '/admin/stats',
         ADMIN_USERS: '/admin/users',
@@ -82,14 +82,14 @@ const CONFIG = {
         ADMIN_SYSTEM_HEALTH: '/admin/system/health',
         ADMIN_RATE_LIMIT_RESET: '/admin/rate-limit/reset'
     },
-    
+
     // UI Settings
     UI: {
         TOAST_DURATION: 5000,
         LOADING_MIN_DURATION: 500,
         AUTO_REFRESH_INTERVAL: 300000 // 5 minutes
     },
-    
+
     // Error messages
     ERRORS: {
         NETWORK_ERROR: 'Network error. Please check your connection.',
@@ -104,11 +104,11 @@ const CONFIG = {
 const FEATURES = {
     WEBAUTHN_SUPPORTED: (() => {
         return window.PublicKeyCredential !== undefined &&
-               window.navigator.credentials !== undefined &&
-               typeof window.navigator.credentials.create === 'function' &&
-               typeof window.navigator.credentials.get === 'function';
+            window.navigator.credentials !== undefined &&
+            typeof window.navigator.credentials.create === 'function' &&
+            typeof window.navigator.credentials.get === 'function';
     })(),
-    
+
     STORAGE_AVAILABLE: (() => {
         try {
             const test = '__storage_test__';
@@ -119,7 +119,7 @@ const FEATURES = {
             return false;
         }
     })(),
-    
+
     HTTPS_REQUIRED: location.protocol !== 'https:' && location.hostname !== 'localhost'
 };
 
