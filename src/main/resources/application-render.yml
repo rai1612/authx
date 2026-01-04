@@ -7,8 +7,7 @@ spring:
   application:
     name: authx-mfa-system
   
-  profiles:
-    active: render
+
   
   datasource:
     # Neon.tech provides DATABASE_URL in format: postgresql://user:password@host:port/dbname
