@@ -56,6 +56,10 @@ spring:
           auth: true
           starttls:
             enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 # JWT Configuration
 jwt:
@@ -140,4 +144,8 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+management:
+  health:
+    mail:
+      enabled: false
 
