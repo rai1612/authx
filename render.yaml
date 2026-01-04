@@ -5,10 +5,8 @@
 services:
   - type: web
     name: authx-backend
-    runtime: java
+    runtime: docker
     plan: free
-    buildCommand: ./mvnw clean package -DskipTests
-    startCommand: java -Dserver.port=$PORT -Dspring.profiles.active=render -jar target/authx-mfa-system-1.0.0.jar
     healthCheckPath: /api/v1/actuator/health
     envVars:
       - key: SPRING_PROFILE
@@ -16,7 +14,10 @@ services:
       - key: DATABASE_URL
         sync: false  # Set this in Render dashboard from Neon.tech connection string
       - key: REDIS_URL
-        sync: false  # Set this in Render dashboard (Render Redis or external)
+        fromService:
+          type: redis
+          name: authx-redis
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true  # Render will generate a secure random value
       - key: JWT_EXPIRATION
@@ -41,4 +42,9 @@ services:
         sync: false  # Set your email app password
       - key: DDL_AUTO
         value: update
+
+  - type: redis
+    name: authx-redis
+    plan: free
+    ipAllowList: [] # internal use only
 
