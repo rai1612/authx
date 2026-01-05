@@ -8,7 +8,7 @@ const CONFIG = {
             return 'http://localhost:8080/api/v1';
         }
         // Production environment - update this with your Render backend URL
-        return window.BACKEND_URL || 'https://authx-backend-n1ls.onrender.com';
+        return window.BACKEND_URL || 'https://authx-backend-n1ls.onrender.com/api/v1';
     })(),
 
     // WebAuthn Configuration
