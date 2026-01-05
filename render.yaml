@@ -9,7 +9,7 @@ services:
     plan: free
     healthCheckPath: /api/v1/actuator/health
     envVars:
-      - key: SPRING_PROFILE
+      - key: SPRING_PROFILES_ACTIVE
         value: render
       - key: DATABASE_URL
         sync: false  # Set this in Render dashboard from Neon.tech connection string
