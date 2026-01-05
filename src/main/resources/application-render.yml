@@ -47,16 +47,17 @@ spring:
   
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
+    port: ${MAIL_PORT:465}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
+    protocol: smtps
     properties:
       mail:
-        smtp:
+        smtps:
           auth: true
-          starttls:
+          ssl:
             enable: true
-            required: true
+            trust: "*"
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
