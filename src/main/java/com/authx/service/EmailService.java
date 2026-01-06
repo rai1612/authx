@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import jakarta.annotation.PostConstruct;
+
 @Service
 public class EmailService {
 
@@ -29,6 +31,11 @@ public class EmailService {
     public EmailService(JavaMailSender mailSender, RedisTemplate<String, String> redisTemplate) {
         this.mailSender = mailSender;
         this.redisTemplate = redisTemplate;
+    }
+
+    @PostConstruct
+    public void init() {
+        log.info("EmailService initialized with frontendUrl: {}", frontendUrl);
     }
 
     private void saveMockEmail(String to, String subject, String content) {
@@ -177,7 +184,7 @@ public class EmailService {
         }
     }
 
-    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:3000}")
+    @org.springframework.beans.factory.annotation.Value("${spring.app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
 
     private String buildPasswordResetEmailContent(String username, String token) {
