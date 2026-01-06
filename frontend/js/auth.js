@@ -6,7 +6,7 @@
 const Auth = {
     currentUser: null,
     mfaToken: null,
-    
+
     /**
      * Check if user is authenticated
      */
@@ -62,12 +62,15 @@ const Auth = {
 async function register() {
     const form = document.getElementById('register-form');
     const formData = new FormData(form);
-    
+
+    const countryCode = document.getElementById('register-country-code')?.value || '+1';
+    const cleanPhone = document.getElementById('register-phone')?.value?.trim();
+
     const userData = {
         username: formData.get('username') || document.getElementById('register-username').value,
         email: formData.get('email') || document.getElementById('register-email').value,
         password: formData.get('password') || document.getElementById('register-password').value,
-        phoneNumber: formData.get('phoneNumber') || document.getElementById('register-phone').value
+        phoneNumber: cleanPhone ? formatPhoneNumber(countryCode, cleanPhone) : null
     };
 
     // Validation
@@ -86,13 +89,18 @@ async function register() {
         return;
     }
 
+    if (cleanPhone && !isValidPhone(cleanPhone)) {
+        showToast('Please enter a valid phone number (digits only)', 'error');
+        return;
+    }
+
     try {
         const response = await api.post(CONFIG.ENDPOINTS.REGISTER, userData);
-        
+
         showToast('Registration successful! Please log in.', 'success');
         clearForm('register-form');
         showLogin();
-        
+
     } catch (error) {
         console.error('Registration error:', error);
         showToast(error.message || 'Registration failed', 'error');
@@ -105,35 +113,30 @@ async function register() {
 async function login() {
     const form = document.getElementById('login-form');
     const formData = new FormData(form);
-    
+
     const loginData = {
-        email: formData.get('email') || document.getElementById('login-email').value,
-        password: formData.get('password') || document.getElementById('login-password').value
+        identifier: formData.get('identifier') || document.getElementById('login-identifier')?.value,
+        password: formData.get('password') || document.getElementById('login-password')?.value
     };
 
     // Validation
-    if (!loginData.email || !loginData.password) {
-        showToast('Please enter your email and password', 'error');
-        return;
-    }
-
-    if (!isValidEmail(loginData.email)) {
-        showToast('Please enter a valid email address', 'error');
+    if (!loginData.identifier || !loginData.password) {
+        showToast('Please enter your email/username and password', 'error');
         return;
     }
 
     try {
-        console.log('Attempting login for:', loginData.email);
+        console.log('Attempting login for:', loginData.identifier);
         const response = await api.post(CONFIG.ENDPOINTS.LOGIN, loginData);
         console.log('Login response:', response);
-        
+
         if (response.mfaRequired) {
             // MFA is required
             console.log('MFA required, setting MFA token and showing challenge');
             Auth.setTokens({ mfaToken: response.mfaToken });
             showToast('Please complete multi-factor authentication', 'info');
             clearForm('login-form');
-            
+
             // Small delay to ensure DOM is ready
             setTimeout(() => {
                 showMfaChallenge();
@@ -148,7 +151,7 @@ async function login() {
             clearForm('login-form');
             showDashboard();
         }
-        
+
     } catch (error) {
         console.error('Login error:', error);
         showToast(error.message || 'Login failed', 'error');
@@ -180,10 +183,10 @@ async function logout() {
 async function showMfaChallenge() {
     console.log('showMfaChallenge called');
     showSection('mfa-section');
-    
+
     // Show method selection view by default
     showMfaMethodSelection();
-    
+
     try {
         // Get user's MFA methods to determine what to show
         console.log('Attempting to load MFA methods...');
@@ -191,17 +194,17 @@ async function showMfaChallenge() {
         console.log('MFA methods loaded:', methods);
         console.log('WebAuthn credentials count:', methods.webAuthnCredentials ? methods.webAuthnCredentials.length : 0);
         console.log('Preferred method:', methods.preferredMethod);
-        
+
         // Render available methods in the new UI
         renderMfaMethodSelection(methods);
-        
+
     } catch (error) {
         console.error('Error loading MFA methods:', error);
         console.error('Error details:', error.message, error.status);
-        
+
         // Show error message
         showToast('Error loading MFA options. Please try again.', 'error');
-        
+
         // Show basic method selection with limited options
         renderMfaMethodSelection({
             emailConfigured: true,
@@ -226,9 +229,9 @@ function showMfaMethodSelection() {
 function renderMfaMethodSelection(methods) {
     const container = document.getElementById('mfa-methods-container');
     if (!container) return;
-    
+
     const availableMethods = [];
-    
+
     // Email OTP - always available
     if (methods.emailConfigured !== false) {
         availableMethods.push({
@@ -240,7 +243,7 @@ function renderMfaMethodSelection(methods) {
             available: true
         });
     }
-    
+
     // SMS OTP - if phone is configured
     if (methods.smsConfigured) {
         availableMethods.push({
@@ -252,7 +255,7 @@ function renderMfaMethodSelection(methods) {
             available: true
         });
     }
-    
+
     // WebAuthn - if credentials exist and browser supports it
     if (methods.webAuthnCredentials && methods.webAuthnCredentials.length > 0 && WebAuthn && WebAuthn.isSupported()) {
         availableMethods.push({
@@ -264,7 +267,7 @@ function renderMfaMethodSelection(methods) {
             available: true
         });
     }
-    
+
     if (availableMethods.length === 0) {
         container.innerHTML = `
             <div class="no-methods-message">
@@ -275,14 +278,14 @@ function renderMfaMethodSelection(methods) {
         `;
         return;
     }
-    
+
     // Sort methods - preferred first, then alphabetically
     availableMethods.sort((a, b) => {
         if (a.isPreferred && !b.isPreferred) return -1;
         if (!a.isPreferred && b.isPreferred) return 1;
         return a.name.localeCompare(b.name);
     });
-    
+
     container.innerHTML = availableMethods.map(method => `
         <div class="mfa-method-card ${method.isPreferred ? 'preferred' : ''}" 
              onclick="selectMfaMethod('${method.id}')"
@@ -310,16 +313,16 @@ function renderMfaMethodSelection(methods) {
  */
 function selectMfaMethod(methodId) {
     console.log('Selected MFA method:', methodId);
-    
+
     // Hide method selection, show verification view
     document.getElementById('mfa-method-selection').style.display = 'none';
     document.getElementById('mfa-verification-view').style.display = 'block';
-    
+
     // Hide all verification content
     document.querySelectorAll('.verification-content').forEach(el => {
         el.style.display = 'none';
     });
-    
+
     // Show selected method verification
     switch (methodId) {
         case 'OTP_EMAIL':
@@ -328,20 +331,20 @@ function selectMfaMethod(methodId) {
             // Auto-send email OTP when selected
             sendEmailOTP();
             break;
-            
+
         case 'OTP_SMS':
             document.getElementById('sms-otp-verification').style.display = 'block';
             document.getElementById('verification-title').textContent = 'SMS OTP Verification';
             // Auto-send SMS OTP when selected
             sendSmsOTP();
             break;
-            
+
         case 'WEBAUTHN':
             document.getElementById('webauthn-verification').style.display = 'block';
             document.getElementById('verification-title').textContent = 'WebAuthn Authentication';
             // Don't auto-trigger WebAuthn - let user click the button
             break;
-            
+
         default:
             console.error('Unknown MFA method:', methodId);
             backToMethodSelection();
@@ -365,7 +368,7 @@ function handleMfaCardKeydown(event, methodId) {
 function backToMethodSelection() {
     document.getElementById('mfa-method-selection').style.display = 'block';
     document.getElementById('mfa-verification-view').style.display = 'none';
-    
+
     // Clear any OTP inputs
     const emailOtpInput = document.getElementById('email-otp-code');
     const smsOtpInput = document.getElementById('sms-otp-code');
@@ -391,7 +394,7 @@ async function sendEmailOTP() {
  */
 async function verifyEmailOTP() {
     const otpCode = document.getElementById('otp-code').value;
-    
+
     if (!otpCode || otpCode.length !== 6) {
         showToast('Please enter a valid 6-digit code', 'error');
         return;
@@ -414,15 +417,15 @@ async function verifyEmailOTP() {
         // MFA verification successful
         Auth.setTokens(response);
         localStorage.removeItem(CONFIG.STORAGE_KEYS.MFA_TOKEN);
-        
+
         await loadUserProfile();
         showToast('Authentication successful!', 'success');
         document.getElementById('otp-code').value = '';
         showDashboard();
-        
+
     } catch (error) {
         console.error('OTP verification error:', error);
-        
+
         // Handle rate limiting specifically
         if (error.isRateLimit) {
             handleMfaRateLimit(error.retryAfter);
@@ -444,22 +447,22 @@ async function verifyEmailOTP() {
  */
 function handleMfaRateLimit(retryAfterSeconds) {
     console.log('Rate limit triggered, disabling buttons for', retryAfterSeconds, 'seconds');
-    
+
     // Clear OTP input
     const otpInput = document.getElementById('otp-code');
     if (otpInput) otpInput.value = '';
-    
+
     // Disable verify and resend buttons with multiple selectors for reliability
-    const verifyButton = document.querySelector('button[onclick="verifyEmailOTP()"]') || 
-                        document.querySelector('.btn-primary[onclick="verifyEmailOTP()"]') ||
-                        Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Verify');
-    
-    const resendButton = document.querySelector('button[onclick="sendEmailOTP()"]') || 
-                        document.querySelector('.btn-secondary[onclick="sendEmailOTP()"]') ||
-                        Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Resend Code');
-    
+    const verifyButton = document.querySelector('button[onclick="verifyEmailOTP()"]') ||
+        document.querySelector('.btn-primary[onclick="verifyEmailOTP()"]') ||
+        Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Verify');
+
+    const resendButton = document.querySelector('button[onclick="sendEmailOTP()"]') ||
+        document.querySelector('.btn-secondary[onclick="sendEmailOTP()"]') ||
+        Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Resend Code');
+
     console.log('Found buttons:', { verifyButton: !!verifyButton, resendButton: !!resendButton });
-    
+
     if (verifyButton) {
         verifyButton.disabled = true;
         verifyButton.setAttribute('data-rate-limited', 'true');
@@ -470,10 +473,10 @@ function handleMfaRateLimit(retryAfterSeconds) {
         resendButton.setAttribute('data-rate-limited', 'true');
         console.log('Resend button disabled');
     }
-    
+
     // Show rate limit message
     showToast(`Too many attempts! Please wait ${Math.ceil(retryAfterSeconds / 60)} minutes before trying again.`, 'error', 8000);
-    
+
     // Start countdown timer
     startMfaRateLimitCountdown(retryAfterSeconds);
 }
@@ -483,34 +486,34 @@ function handleMfaRateLimit(retryAfterSeconds) {
  */
 function startMfaRateLimitCountdown(seconds) {
     let remainingTime = seconds;
-    
+
     // Create or update countdown display
     let countdownDiv = document.getElementById('mfa-rate-limit-countdown');
     if (!countdownDiv) {
         countdownDiv = document.createElement('div');
         countdownDiv.id = 'mfa-rate-limit-countdown';
         countdownDiv.className = 'rate-limit-countdown';
-        
+
         // Insert after the OTP input
         const otpOption = document.getElementById('email-otp-option');
         if (otpOption) {
             otpOption.appendChild(countdownDiv);
         }
     }
-    
+
     const updateCountdown = () => {
         if (remainingTime <= 0) {
             // Re-enable buttons with robust selectors
-            const verifyButton = document.querySelector('button[onclick="verifyEmailOTP()"]') || 
-                                document.querySelector('.btn-primary[onclick="verifyEmailOTP()"]') ||
-                                Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Verify');
-            
-            const resendButton = document.querySelector('button[onclick="sendEmailOTP()"]') || 
-                                document.querySelector('.btn-secondary[onclick="sendEmailOTP()"]') ||
-                                Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Resend Code');
-            
+            const verifyButton = document.querySelector('button[onclick="verifyEmailOTP()"]') ||
+                document.querySelector('.btn-primary[onclick="verifyEmailOTP()"]') ||
+                Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Verify');
+
+            const resendButton = document.querySelector('button[onclick="sendEmailOTP()"]') ||
+                document.querySelector('.btn-secondary[onclick="sendEmailOTP()"]') ||
+                Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Resend Code');
+
             console.log('Re-enabling buttons after rate limit countdown');
-            
+
             if (verifyButton) {
                 verifyButton.disabled = false;
                 verifyButton.removeAttribute('data-rate-limited');
@@ -521,22 +524,22 @@ function startMfaRateLimitCountdown(seconds) {
                 resendButton.removeAttribute('data-rate-limited');
                 console.log('Resend button re-enabled');
             }
-            
+
             // Remove countdown display
             if (countdownDiv && countdownDiv.parentNode) {
                 countdownDiv.parentNode.removeChild(countdownDiv);
             }
-            
+
             showToast('You can now try again!', 'success');
             return;
         }
-        
+
         const minutes = Math.floor(remainingTime / 60);
         const seconds = remainingTime % 60;
-        const timeString = minutes > 0 
-            ? `${minutes}m ${seconds}s` 
+        const timeString = minutes > 0
+            ? `${minutes}m ${seconds}s`
             : `${seconds}s`;
-            
+
         countdownDiv.innerHTML = `
             <div class="alert alert-warning">
                 <i class="fas fa-clock"></i> 
@@ -545,14 +548,14 @@ function startMfaRateLimitCountdown(seconds) {
                 <small>This helps protect your account from unauthorized access.</small>
             </div>
         `;
-        
+
         remainingTime--;
     };
-    
+
     // Update immediately and then every second
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
-    
+
     // Clean up interval when countdown reaches zero
     setTimeout(() => clearInterval(interval), (seconds + 1) * 1000);
 }
@@ -592,17 +595,17 @@ async function sendSmsOTP() {
  */
 async function verifyEmailOTP() {
     const otpCode = document.getElementById('email-otp-code').value.trim();
-    
+
     if (!otpCode) {
         showToast('Please enter the OTP code', 'error');
         return;
     }
-    
+
     if (otpCode.length !== 6 || !/^\d{6}$/.test(otpCode)) {
         showToast('Please enter a valid 6-digit code', 'error');
         return;
     }
-    
+
     try {
         console.log('Verifying email OTP...');
         const mfaToken = localStorage.getItem(CONFIG.STORAGE_KEYS.MFA_TOKEN);
@@ -613,19 +616,19 @@ async function verifyEmailOTP() {
             mfaToken: mfaToken,
             otpCode: otpCode
         });
-        
+
         console.log('Email OTP verification successful');
         Auth.setTokens(response);
         await loadUserProfile();
         updateNavigation();
         showToast('Authentication successful!', 'success');
         showDashboard();
-        
+
     } catch (error) {
         console.error('Error verifying email OTP:', error);
         showToast(error.message || 'Invalid OTP code', 'error');
         document.getElementById('email-otp-code').value = '';
-        
+
         // Handle rate limiting
         if (error.rateLimited) {
             handleRateLimit(error.secondsUntilReset || 300);
@@ -638,17 +641,17 @@ async function verifyEmailOTP() {
  */
 async function verifySmsOTP() {
     const otpCode = document.getElementById('sms-otp-code').value.trim();
-    
+
     if (!otpCode) {
         showToast('Please enter the OTP code', 'error');
         return;
     }
-    
+
     if (otpCode.length !== 6 || !/^\d{6}$/.test(otpCode)) {
         showToast('Please enter a valid 6-digit code', 'error');
         return;
     }
-    
+
     try {
         console.log('Verifying SMS OTP...');
         const mfaToken = localStorage.getItem(CONFIG.STORAGE_KEYS.MFA_TOKEN);
@@ -659,19 +662,19 @@ async function verifySmsOTP() {
             mfaToken: mfaToken,
             otpCode: otpCode
         });
-        
+
         console.log('SMS OTP verification successful');
         Auth.setTokens(response);
         await loadUserProfile();
         updateNavigation();
         showToast('Authentication successful!', 'success');
         showDashboard();
-        
+
     } catch (error) {
         console.error('Error verifying SMS OTP:', error);
         showToast(error.message || 'Invalid OTP code', 'error');
         document.getElementById('sms-otp-code').value = '';
-        
+
         // Handle rate limiting
         if (error.rateLimited) {
             handleRateLimit(error.secondsUntilReset || 300);
@@ -700,7 +703,7 @@ async function loadUserProfile() {
  */
 async function refreshToken() {
     const refreshToken = localStorage.getItem(CONFIG.STORAGE_KEYS.REFRESH_TOKEN);
-    
+
     if (!refreshToken) {
         throw new Error('No refresh token available');
     }
@@ -712,7 +715,7 @@ async function refreshToken() {
 
         Auth.setTokens(response);
         return response;
-        
+
     } catch (error) {
         console.error('Token refresh failed:', error);
         Auth.clearAuth();
@@ -732,14 +735,14 @@ function setupOtpInputHandlers() {
             // Only allow numeric input and limit to 6 digits
             e.target.value = e.target.value.replace(/\D/g, '').substring(0, 6);
         });
-        
+
         emailOtpInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && e.target.value.length === 6) {
                 verifyEmailOTP();
             }
         });
     }
-    
+
     // SMS OTP input
     const smsOtpInput = document.getElementById('sms-otp-code');
     if (smsOtpInput) {
@@ -747,7 +750,7 @@ function setupOtpInputHandlers() {
             // Only allow numeric input and limit to 6 digits
             e.target.value = e.target.value.replace(/\D/g, '').substring(0, 6);
         });
-        
+
         smsOtpInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && e.target.value.length === 6) {
                 verifySmsOTP();
@@ -783,7 +786,7 @@ function initializeAuth() {
     // Check for password reset token first, before checking authentication
     const urlParams = new URLSearchParams(window.location.search);
     const resetToken = urlParams.get('token');
-    
+
     if (resetToken) {
         // Password reset flow takes priority over authentication state
         console.log('Password reset token detected, showing reset form');

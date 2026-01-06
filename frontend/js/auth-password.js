@@ -5,7 +5,7 @@
  */
 function showForgotPassword() {
     showSection('forgot-password-section');
-    
+
     // Setup form handler
     const form = document.getElementById('forgot-password-form');
     if (form) {
@@ -23,16 +23,16 @@ function showResetPassword(token = null) {
         const urlParams = new URLSearchParams(window.location.search);
         token = urlParams.get('token');
     }
-    
+
     showSection('reset-password-section');
-    
+
     if (token) {
         const tokenInput = document.getElementById('reset-token');
         if (tokenInput) {
             tokenInput.value = token;
         }
     }
-    
+
     // Setup form handler
     const form = document.getElementById('reset-password-form');
     if (form) {
@@ -46,34 +46,34 @@ function showResetPassword(token = null) {
  */
 async function handleForgotPassword(event) {
     event.preventDefault();
-    
+
     const email = document.getElementById('forgot-email').value.trim();
-    
+
     if (!email) {
         showToast('Please enter your email address', 'error');
         return;
     }
-    
+
     try {
         showLoading();
-        
+
         const response = await api.post(CONFIG.ENDPOINTS.FORGOT_PASSWORD, { email });
-        
+
         showToast('If the email exists, a password reset link has been sent.', 'success');
-        
+
         // Clear form
         document.getElementById('forgot-password-form').reset();
-        
+
         // Show login after a delay
         setTimeout(() => {
             showLogin();
         }, 3000);
-        
+
     } catch (error) {
         console.error('Forgot password error:', error);
         // Always show success message to prevent email enumeration
         showToast('If the email exists, a password reset link has been sent.', 'success');
-        
+
         setTimeout(() => {
             showLogin();
         }, 3000);
@@ -87,45 +87,45 @@ async function handleForgotPassword(event) {
  */
 async function handleResetPassword(event) {
     event.preventDefault();
-    
+
     const token = document.getElementById('reset-token').value;
     const newPassword = document.getElementById('new-password').value;
     const confirmPassword = document.getElementById('confirm-password').value;
-    
+
     // Validate inputs
     if (!token) {
         showToast('Invalid reset token', 'error');
         return;
     }
-    
-    if (!newPassword || newPassword.length < 8) {
-        showToast('Password must be at least 8 characters long', 'error');
+
+    if (!isValidPassword(newPassword)) {
+        showToast('Password must be at least 8 characters with uppercase, lowercase, number, and special character', 'error');
         return;
     }
-    
+
     if (newPassword !== confirmPassword) {
         showToast('Passwords do not match', 'error');
         return;
     }
-    
+
     try {
         showLoading();
-        
+
         const response = await api.post(CONFIG.ENDPOINTS.RESET_PASSWORD, {
             token: token,
             newPassword: newPassword
         });
-        
+
         showToast('Password reset successfully! You can now log in with your new password.', 'success');
-        
+
         // Clear form
         document.getElementById('reset-password-form').reset();
-        
+
         // Show login after a delay
         setTimeout(() => {
             showLogin();
         }, 2000);
-        
+
     } catch (error) {
         console.error('Reset password error:', error);
         showToast(error.message || 'Failed to reset password', 'error');
@@ -143,7 +143,7 @@ function showChangePasswordModal() {
     if (form) {
         form.reset();
     }
-    
+
     // Show the modal
     showModal('change-password-modal');
 }
@@ -158,13 +158,13 @@ function setupChangePasswordForm() {
         console.error('Change password form not found');
         return;
     }
-    
+
     // Remove existing event listener
     form.removeEventListener('submit', handleChangePassword);
     form.addEventListener('submit', handleChangePassword);
-    
+
     console.log('Change password form setup complete');
-    
+
     // Note: No need for old MFA-related setup since we use modal approach
 }
 
@@ -179,24 +179,24 @@ function updateMfaMethodOptions() {
         console.log('updateMfaMethodOptions: Missing select element or Dashboard.mfaStatus');
         return;
     }
-    
+
     console.log('updateMfaMethodOptions: Updating options with mfaStatus:', {
         webAuthnCredentials: Dashboard.mfaStatus.webAuthnCredentials?.length || 0,
         emailConfigured: Dashboard.mfaStatus.emailConfigured,
         smsConfigured: Dashboard.mfaStatus.smsConfigured
     });
-    
+
     // Enable/disable options based on availability
     const options = mfaMethodSelect.querySelectorAll('option');
     options.forEach(option => {
         const method = option.value;
-        
+
         if (method === '') {
             // "Use preferred method" option - always available
             option.disabled = false;
             return;
         }
-        
+
         // Check if method is available
         let isAvailable = false;
         switch (method) {
@@ -207,8 +207,8 @@ function updateMfaMethodOptions() {
                 isAvailable = Dashboard.mfaStatus.smsConfigured;
                 break;
             case 'WEBAUTHN':
-                isAvailable = Dashboard.mfaStatus.webAuthnCredentials && 
-                             Dashboard.mfaStatus.webAuthnCredentials.length > 0;
+                isAvailable = Dashboard.mfaStatus.webAuthnCredentials &&
+                    Dashboard.mfaStatus.webAuthnCredentials.length > 0;
                 console.log('WebAuthn availability check:', {
                     hasCredentials: !!Dashboard.mfaStatus.webAuthnCredentials,
                     credentialCount: Dashboard.mfaStatus.webAuthnCredentials?.length || 0,
@@ -216,7 +216,7 @@ function updateMfaMethodOptions() {
                 });
                 break;
         }
-        
+
         option.disabled = !isAvailable;
         if (!isAvailable) {
             option.textContent = option.textContent.replace(' (Not Available)', '') + ' (Not Available)';
@@ -224,7 +224,7 @@ function updateMfaMethodOptions() {
             option.textContent = option.textContent.replace(' (Not Available)', '');
         }
     });
-    
+
     // Set preferred method as default if available
     if (Dashboard.mfaStatus.preferredMethod) {
         mfaMethodSelect.value = Dashboard.mfaStatus.preferredMethod;
@@ -238,7 +238,7 @@ function updateMfaMethodOptions() {
 function handleMfaMethodChange(event) {
     const method = event.target.value;
     const otpSection = document.getElementById('otp-section');
-    
+
     if (method === 'WEBAUTHN') {
         otpSection.style.display = 'none';
     } else {
@@ -251,21 +251,21 @@ function handleMfaMethodChange(event) {
  */
 async function sendMfaCodeForPasswordChange() {
     const method = document.getElementById('mfa-password-method')?.value || Dashboard.userProfile?.preferredMfaMethod;
-    
+
     if (method === 'WEBAUTHN') {
         showToast('WebAuthn verification will be performed during password change', 'info');
         return;
     }
-    
+
     try {
         showLoading();
-        
+
         const response = await api.post(CONFIG.ENDPOINTS.OTP_SEND, {
             method: method === 'OTP_SMS' ? 'SMS' : 'EMAIL'
         });
-        
+
         showToast(`Verification code sent via ${method === 'OTP_SMS' ? 'SMS' : 'Email'}`, 'success');
-        
+
     } catch (error) {
         console.error('Error sending MFA code:', error);
         showToast(error.message || 'Failed to send verification code', 'error');
@@ -280,38 +280,38 @@ async function sendMfaCodeForPasswordChange() {
 async function handleChangePassword(event) {
     event.preventDefault();
     console.log('handleChangePassword called, event prevented');
-    
+
     const currentPassword = document.getElementById('current-password').value;
     const newPassword = document.getElementById('new-password-change').value;
     const confirmPassword = document.getElementById('confirm-new-password').value;
-    
+
     // Validate inputs
     if (!currentPassword) {
         showToast('Please enter your current password', 'error');
         return;
     }
-    
-    if (!newPassword || newPassword.length < 8) {
-        showToast('New password must be at least 8 characters long', 'error');
+
+    if (!isValidPassword(newPassword)) {
+        showToast('New password must be at least 8 characters with uppercase, lowercase, number, and special character', 'error');
         return;
     }
-    
+
     if (newPassword !== confirmPassword) {
         showToast('New passwords do not match', 'error');
         return;
     }
-    
+
     // Store password data for later use in the modal
     window.passwordChangeData = {
         currentPassword: currentPassword,
         newPassword: newPassword
     };
-    
+
     // Check if MFA is required - check both sources for reliability
     const mfaEnabledFromProfile = Dashboard.userProfile?.mfaEnabled;
     const mfaEnabledFromStatus = Dashboard.mfaStatus?.mfaEnabled;
     const mfaEnabled = mfaEnabledFromProfile || mfaEnabledFromStatus;
-    
+
     console.log('Checking MFA status:', {
         userProfile: Dashboard.userProfile,
         mfaEnabledFromProfile: mfaEnabledFromProfile,
@@ -319,30 +319,30 @@ async function handleChangePassword(event) {
         mfaEnabledFromStatus: mfaEnabledFromStatus,
         finalMfaEnabled: mfaEnabled
     });
-    
+
     if (mfaEnabled) {
         console.log('MFA is enabled, showing MFA verification modal');
-        
+
         try {
             // Setup the MFA modal
             setupMfaPasswordModal();
-            
+
             // Show the MFA verification modal
             console.log('About to show modal mfa-password-modal');
             const modalElement = document.getElementById('mfa-password-modal');
             console.log('Modal element found:', !!modalElement);
-            
+
             if (modalElement) {
                 showModal('mfa-password-modal');
                 console.log('Modal show command executed, display style:', modalElement.style.display);
             } else {
                 throw new Error('Modal element mfa-password-modal not found in DOM');
             }
-            
+
             // IMPORTANT: Return here - do NOT proceed with password change
             // Password change will happen when modal form is submitted
             return;
-            
+
         } catch (error) {
             console.error('Error setting up or showing MFA modal:', error);
             showToast('Error showing MFA verification. Please try again.', 'error');
@@ -350,7 +350,7 @@ async function handleChangePassword(event) {
         }
     } else {
         console.log('MFA is disabled, proceeding directly with password change');
-        
+
         // MFA not required, proceed directly
         await performPasswordChange({
             currentPassword: currentPassword,
@@ -366,58 +366,58 @@ async function handleChangePassword(event) {
  */
 function setupMfaPasswordModal() {
     console.log('Setting up MFA password modal');
-    
+
     // Check if modal elements exist
     const modal = document.getElementById('mfa-password-modal');
     const form = document.getElementById('mfa-password-form');
     const methodSelect = document.getElementById('mfa-password-method');
     const otpSection = document.getElementById('mfa-password-otp-section');
-    
+
     console.log('Modal elements found:', {
         modal: !!modal,
         form: !!form,
         methodSelect: !!methodSelect,
         otpSection: !!otpSection
     });
-    
+
     if (!modal || !form || !methodSelect || !otpSection) {
         console.error('Required modal elements not found:', {
             modal: modal ? 'found' : 'MISSING',
-            form: form ? 'found' : 'MISSING', 
+            form: form ? 'found' : 'MISSING',
             methodSelect: methodSelect ? 'found' : 'MISSING',
             otpSection: otpSection ? 'found' : 'MISSING'
         });
         showToast('MFA modal setup failed. Please refresh the page.', 'error');
         return;
     }
-    
+
     updateMfaPasswordMethodOptions();
-    
+
     // Reset form
     form.reset();
-    
+
     // Hide OTP section initially
     otpSection.style.display = 'none';
-    
+
     // Remove existing listeners to avoid duplicates
     methodSelect.removeEventListener('change', handleMfaPasswordMethodChange);
     form.removeEventListener('submit', handleMfaPasswordSubmit);
-    
+
     // Add new listeners
     methodSelect.addEventListener('change', handleMfaPasswordMethodChange);
     form.addEventListener('submit', handleMfaPasswordSubmit);
-    
+
     // Set preferred method as default and configure dropdown to show only alternatives
     const preferredMethod = Dashboard.mfaStatus?.preferredMethod;
     if (preferredMethod) {
         console.log('Setting preferred method in modal:', preferredMethod);
-        
+
         // Pre-select the preferred method
         methodSelect.value = preferredMethod;
-        
+
         // Update dropdown to show only alternative methods
         updateMethodDropdownForPreferred(methodSelect, preferredMethod);
-        
+
         // Show the appropriate section based on preferred method
         if (preferredMethod === 'WEBAUTHN') {
             otpSection.style.display = 'none';
@@ -428,7 +428,7 @@ function setupMfaPasswordModal() {
         // No preferred method, show all options
         updateMfaPasswordMethodOptions();
     }
-    
+
     console.log('MFA password modal setup complete');
 }
 
@@ -437,41 +437,41 @@ function setupMfaPasswordModal() {
  */
 function updateMethodDropdownForPreferred(methodSelect, preferredMethod) {
     if (!methodSelect || !Dashboard.mfaStatus) return;
-    
+
     const methodNames = {
         'OTP_EMAIL': 'Email OTP',
-        'OTP_SMS': 'SMS OTP', 
+        'OTP_SMS': 'SMS OTP',
         'WEBAUTHN': 'WebAuthn'
     };
-    
+
     // Clear existing options
     methodSelect.innerHTML = '';
-    
+
     // Add preferred method as first option (selected)
     const preferredOption = document.createElement('option');
     preferredOption.value = preferredMethod;
     preferredOption.textContent = `${methodNames[preferredMethod]} (Preferred)`;
     preferredOption.selected = true;
     methodSelect.appendChild(preferredOption);
-    
+
     // Add alternative methods that are available
     const alternatives = [];
-    
+
     // Check availability of other methods
     if (preferredMethod !== 'OTP_EMAIL' && Dashboard.mfaStatus.emailConfigured) {
         alternatives.push({ value: 'OTP_EMAIL', name: methodNames['OTP_EMAIL'] });
     }
-    
+
     if (preferredMethod !== 'OTP_SMS' && Dashboard.mfaStatus.smsConfigured) {
         alternatives.push({ value: 'OTP_SMS', name: methodNames['OTP_SMS'] });
     }
-    
-    if (preferredMethod !== 'WEBAUTHN' && 
-        Dashboard.mfaStatus.webAuthnCredentials && 
+
+    if (preferredMethod !== 'WEBAUTHN' &&
+        Dashboard.mfaStatus.webAuthnCredentials &&
         Dashboard.mfaStatus.webAuthnCredentials.length > 0) {
         alternatives.push({ value: 'WEBAUTHN', name: methodNames['WEBAUTHN'] });
     }
-    
+
     // Add alternative methods to dropdown
     alternatives.forEach(alt => {
         const option = document.createElement('option');
@@ -479,7 +479,7 @@ function updateMethodDropdownForPreferred(methodSelect, preferredMethod) {
         option.textContent = alt.name;
         methodSelect.appendChild(option);
     });
-    
+
     console.log('Updated dropdown with preferred method:', preferredMethod, 'and alternatives:', alternatives);
 }
 
@@ -489,16 +489,16 @@ function updateMethodDropdownForPreferred(methodSelect, preferredMethod) {
 function updateMfaPasswordMethodOptions() {
     const methodSelect = document.getElementById('mfa-password-method');
     if (!methodSelect || !Dashboard.mfaStatus) return;
-    
+
     const options = methodSelect.querySelectorAll('option');
     options.forEach(option => {
         const method = option.value;
-        
+
         if (method === '') {
             option.disabled = false;
             return;
         }
-        
+
         let isAvailable = false;
         switch (method) {
             case 'OTP_EMAIL':
@@ -508,11 +508,11 @@ function updateMfaPasswordMethodOptions() {
                 isAvailable = Dashboard.mfaStatus.smsConfigured;
                 break;
             case 'WEBAUTHN':
-                isAvailable = Dashboard.mfaStatus.webAuthnCredentials && 
-                             Dashboard.mfaStatus.webAuthnCredentials.length > 0;
+                isAvailable = Dashboard.mfaStatus.webAuthnCredentials &&
+                    Dashboard.mfaStatus.webAuthnCredentials.length > 0;
                 break;
         }
-        
+
         option.disabled = !isAvailable;
         if (!isAvailable) {
             option.textContent = option.textContent.replace(' (Not Available)', '') + ' (Not Available)';
@@ -528,7 +528,7 @@ function updateMfaPasswordMethodOptions() {
 function handleMfaPasswordMethodChange(event) {
     const method = event.target.value;
     const otpSection = document.getElementById('mfa-password-otp-section');
-    
+
     if (method === 'WEBAUTHN' || method === '') {
         otpSection.style.display = 'none';
     } else {
@@ -543,34 +543,34 @@ function handleMfaPasswordMethodChange(event) {
  */
 async function handleMfaPasswordSubmit(event) {
     event.preventDefault();
-    
+
     const method = document.getElementById('mfa-password-method').value;
     const code = document.getElementById('mfa-password-code').value;
-    
+
     console.log('Form submitted with method:', method);
-    
+
     if (!method) {
         showToast('Please select a verification method', 'error');
         return;
     }
-    
+
     if (method !== 'WEBAUTHN' && (!code || code.trim().length === 0)) {
         showToast('Please enter the verification code', 'error');
         return;
     }
-    
+
     try {
         let mfaCode = code;
-        
+
         // Handle WebAuthn verification
         if (method === 'WEBAUTHN') {
             showToast('Please complete biometric verification...', 'info');
             mfaCode = await performWebAuthnForPasswordChange();
         }
-        
+
         // Close the modal
         closeModal('mfa-password-modal');
-        
+
         // Perform the password change
         await performPasswordChange({
             currentPassword: window.passwordChangeData.currentPassword,
@@ -578,7 +578,7 @@ async function handleMfaPasswordSubmit(event) {
             mfaCode: mfaCode,
             mfaMethod: method
         });
-        
+
     } catch (error) {
         console.error('MFA verification error:', error);
         if (error.name === 'NotAllowedError') {
@@ -597,25 +597,25 @@ async function handleMfaPasswordSubmit(event) {
 async function performPasswordChange(requestData) {
     try {
         showLoading();
-        
+
         const response = await api.put(CONFIG.ENDPOINTS.CHANGE_PASSWORD, requestData);
-        
+
         showToast('Password changed successfully!', 'success');
-        
+
         // Clear form
         document.getElementById('change-password-form').reset();
-        
+
         // Clear stored password data
         delete window.passwordChangeData;
-        
+
         // Close the password change modal
         closeModal('change-password-modal');
-        
+
         // Reload audit logs to show the password change activity
         if (Dashboard.loadAuditLogs) {
             await Dashboard.loadAuditLogs();
         }
-        
+
     } catch (error) {
         console.error('Change password error details:', {
             error: error,
@@ -623,7 +623,7 @@ async function performPasswordChange(requestData) {
             status: error.status,
             stack: error.stack
         });
-        
+
         // Handle specific error cases
         if (error.status === 401 || error.message?.includes('Unauthorized')) {
             showToast('Your session has expired. Please log in again.', 'error');
@@ -652,16 +652,16 @@ async function performWebAuthnForPasswordChange() {
     try {
         // Get a challenge for WebAuthn verification using existing MFA endpoint
         const challengeData = await api.post('/mfa/webauthn/challenge');
-        
+
         console.log('Received challenge data:', challengeData);
         console.log('challengeData type:', typeof challengeData);
         console.log('challengeData.challenge:', challengeData.challenge);
         console.log('challengeData.challenge type:', typeof challengeData.challenge);
-        
+
         // Extract just the challenge string from the response
         let challengeString;
         let webAuthnOptions;
-        
+
         if (typeof challengeData === 'string') {
             // Simple string challenge
             challengeString = challengeData;
@@ -690,15 +690,15 @@ async function performWebAuthnForPasswordChange() {
             console.error('Unexpected challenge data format:', challengeData);
             throw new Error('Invalid challenge response from server');
         }
-        
+
         console.log('Extracted challenge string:', challengeString);
         console.log('Challenge type:', typeof challengeString);
         console.log('Challenge length:', challengeString?.length);
-        
+
         // Prepare the credential request options
         // Handle the challenge format - backend sends UUID string, convert to bytes
         let challengeBytes;
-        
+
         // Check if it looks like a UUID (contains hyphens and is 36 chars)
         if (challengeString && challengeString.includes('-') && challengeString.length === 36) {
             // Backend is sending a UUID string, convert to bytes using TextEncoder
@@ -730,7 +730,7 @@ async function performWebAuthnForPasswordChange() {
                 }
             }
         }
-        
+
         const publicKeyCredentialRequestOptions = {
             challenge: challengeBytes,
             allowCredentials: Dashboard.mfaStatus.webAuthnCredentials.map(cred => {
@@ -745,7 +745,7 @@ async function performWebAuthnForPasswordChange() {
                     const paddedBase64 = padding ? base64 + '='.repeat(4 - padding) : base64;
                     credentialIdBytes = Uint8Array.from(atob(paddedBase64), c => c.charCodeAt(0));
                 }
-                
+
                 return {
                     id: credentialIdBytes,
                     type: 'public-key',
@@ -757,7 +757,7 @@ async function performWebAuthnForPasswordChange() {
         };
 
         console.log('Starting WebAuthn authentication for password change...');
-        
+
         // Request user verification (biometric/PIN)
         const credential = await navigator.credentials.get({
             publicKey: publicKeyCredentialRequestOptions
@@ -774,7 +774,7 @@ async function performWebAuthnForPasswordChange() {
                 authenticatorData: btoa(String.fromCharCode(...new Uint8Array(credential.response.authenticatorData))),
                 clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(credential.response.clientDataJSON))),
                 signature: btoa(String.fromCharCode(...new Uint8Array(credential.response.signature))),
-                userHandle: credential.response.userHandle ? 
+                userHandle: credential.response.userHandle ?
                     btoa(String.fromCharCode(...new Uint8Array(credential.response.userHandle))) : null
             },
             type: credential.type
@@ -782,7 +782,7 @@ async function performWebAuthnForPasswordChange() {
 
         // Convert to JSON string format that MfaService.verifyWebAuthn expects
         const webAuthnResponseString = JSON.stringify(webAuthnResponse);
-        
+
         console.log('WebAuthn verification successful for password change');
         return webAuthnResponseString;
 
@@ -796,7 +796,7 @@ async function performWebAuthnForPasswordChange() {
  * Public function to refresh MFA visibility (can be called from other modules)
  * Note: With modal-based MFA, this function is mainly for compatibility
  */
-window.refreshPasswordFormMfaVisibility = function() {
+window.refreshPasswordFormMfaVisibility = function () {
     // The modal-based approach doesn't need real-time updates
     // But we can update the modal options if it's open
     const modal = document.getElementById('mfa-password-modal');
@@ -809,7 +809,7 @@ window.refreshPasswordFormMfaVisibility = function() {
 function initializePasswordReset() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
-    
+
     if (token) {
         // Small delay to ensure DOM is ready and other scripts have loaded
         setTimeout(() => {

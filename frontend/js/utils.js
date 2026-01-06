@@ -18,7 +18,7 @@ class APIClient {
 
         const tokenKey = useMfaToken ? CONFIG.STORAGE_KEYS.MFA_TOKEN : CONFIG.STORAGE_KEYS.ACCESS_TOKEN;
         const token = localStorage.getItem(tokenKey);
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
@@ -50,22 +50,23 @@ class APIClient {
                     error.retryAfter = retryAfter;
                     throw error;
                 }
-                
-                throw new Error(data.error || `HTTP ${response.status}`);
+
+                // Prioritize data.message as it often contains the user-friendly validation error
+                throw new Error(data.message || data.error || `HTTP ${response.status}`);
             }
 
             return data;
         } catch (error) {
             console.error('API Request failed:', error);
-            
+
             // Add status code to error object for better handling
             if (error.message.includes('HTTP 401')) {
                 error.status = 401;
             }
-            
+
             // Only auto-handle unauthorized for authentication endpoints
             // Let other endpoints handle 401 errors themselves
-            if ((error.message.includes('401') || error.message.includes('Unauthorized')) && 
+            if ((error.message.includes('401') || error.message.includes('Unauthorized')) &&
                 (endpoint.includes('/auth/') || endpoint.includes('/mfa/'))) {
                 this.handleUnauthorized();
             }
@@ -248,7 +249,7 @@ function closeModal(modalId) {
 // Show section
 function showSection(sectionId) {
     console.log('showSection called with:', sectionId);
-    
+
     // Hide all sections
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
@@ -276,50 +277,50 @@ function showHome() {
 function toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
+
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
-    
+
     // Update theme icon
     const themeIcon = document.getElementById('theme-icon');
     if (themeIcon) {
         themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     }
-    
+
     console.log('Theme switched to:', newTheme);
 }
 
 // Initialize theme on page load
 function initializeTheme() {
-    const savedTheme = localStorage.getItem('theme') || 
-                     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    
+    const savedTheme = localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
     document.documentElement.setAttribute('data-theme', savedTheme);
-    
+
     // Update theme icon
     const themeIcon = document.getElementById('theme-icon');
     if (themeIcon) {
         themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     }
-    
+
     console.log('Theme initialized:', savedTheme);
 }
 
 // Update navigation based on auth state
 function updateNavigation() {
     const isAuthenticated = !!localStorage.getItem(CONFIG.STORAGE_KEYS.ACCESS_TOKEN);
-    
+
     // Show/hide nav items based on auth state
     document.getElementById('dashboard-link').style.display = isAuthenticated ? 'block' : 'none';
     document.getElementById('logout-link').style.display = isAuthenticated ? 'block' : 'none';
-    
+
     // Check admin role for admin link
     const isAdmin = isAuthenticated && checkAdminRole();
     const adminLink = document.getElementById('admin-link');
     if (adminLink) {
         adminLink.style.display = isAdmin ? 'block' : 'none';
     }
-    
+
     // Hide login/register links when authenticated
     document.querySelectorAll('.nav-link').forEach(link => {
         if (link.textContent === 'Login' || link.textContent === 'Register') {
@@ -355,7 +356,7 @@ function getFormData(formId) {
 
     const formData = new FormData(form);
     const data = {};
-    
+
     for (const [key, value] of formData.entries()) {
         data[key] = value;
     }
@@ -410,10 +411,18 @@ function isValidPassword(password) {
     return passwordRegex.test(password);
 }
 
-// Phone validation
+// Phone validation (exactly 10 digits as requested)
 function isValidPhone(phone) {
-    const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
+    const phoneRegex = /^\d{10}$/;
     return phoneRegex.test(phone);
+}
+
+// Format phone number to E.164
+function formatPhoneNumber(countryCode, number) {
+    // Remove all non-digits from number
+    const cleanNumber = number.replace(/\D/g, '');
+    if (!cleanNumber) return null;
+    return `${countryCode}${cleanNumber}`;
 }
 
 /**
@@ -448,7 +457,7 @@ function base64UrlToArrayBuffer(base64url) {
 // Format date for display
 function formatDate(dateString) {
     if (!dateString) return 'Never';
-    
+
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
@@ -460,14 +469,14 @@ function formatDate(dateString) {
     if (diffMins < 60) return `${diffMins} minutes ago`;
     if (diffHours < 24) return `${diffHours} hours ago`;
     if (diffDays < 7) return `${diffDays} days ago`;
-    
+
     return date.toLocaleDateString();
 }
 
 // Format relative time
 function formatRelativeTime(dateString) {
     if (!dateString) return 'Never';
-    
+
     const date = new Date(dateString);
     const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
     const diffMs = date - new Date();

@@ -7,7 +7,7 @@ const Dashboard = {
     mfaStatus: null,
     userProfile: null,
     auditLogs: [],
-    
+
     /**
      * Initialize dashboard
      */
@@ -71,6 +71,31 @@ const Dashboard = {
     renderUserProfile() {
         const container = document.getElementById('user-profile');
         if (!container || !this.userProfile) return;
+
+        // Parse existing phone number
+        let countryCode = '+1'; // Default
+        let phoneOnly = '';
+
+        if (this.userProfile.phoneNumber) {
+            const phone = this.userProfile.phoneNumber;
+            // Simple parsing for known codes
+            const knownCodes = ['+1', '+44', '+91', '+33', '+49', '+81', '+86'];
+
+            for (const code of knownCodes) {
+                if (phone.startsWith(code)) {
+                    countryCode = code;
+                    phoneOnly = phone.substring(code.length);
+                    break;
+                }
+            }
+
+            // If no match found but starts with +, treat entire thing as number or try generic
+            if (!phoneOnly && phone.startsWith('+')) {
+                // Fallback: don't split if we don't recognize the code, 
+                // or maybe just put it all in number field? 
+                // Let's stick to default behavior for now or just generic +
+            }
+        }
 
         container.innerHTML = `
             <!-- Profile View Mode -->
@@ -165,10 +190,21 @@ const Dashboard = {
                             <i class="fas fa-phone"></i>
                             Phone Number
                         </label>
-                        <input type="tel" id="edit-phone" name="phoneNumber" 
-                               value="${this.userProfile.phoneNumber || ''}" 
-                               placeholder="+1234567890">
-                        <small class="form-help">Optional. Include country code (e.g., +1234567890)</small>
+                        <div class="phone-input-group" style="display: flex; gap: 0.5rem;">
+                            <select id="edit-country-code" style="width: 100px;">
+                                <option value="+1">US (+1)</option>
+                                <option value="+44">UK (+44)</option>
+                                <option value="+91">IN (+91)</option>
+                                <option value="+33">FR (+33)</option>
+                                <option value="+49">DE (+49)</option>
+                                <option value="+81">JP (+81)</option>
+                                <option value="+86">CN (+86)</option>
+                            </select>
+                            <input type="tel" id="edit-phone" 
+                                   value="${phoneOnly}" 
+                                   placeholder="1234567890" style="flex: 1;">
+                        </div>
+                        <small class="form-help">Optional. Digits only.</small>
                     </div>
                     <div class="profile-edit-actions">
                         <button type="button" class="btn btn-secondary" onclick="cancelProfileEdit()">
@@ -182,12 +218,20 @@ const Dashboard = {
             </div>
         `;
 
+        // Pre-select country code if possible
+        if (countryCode) {
+            const countrySelect = document.getElementById('edit-country-code');
+            if (countrySelect && countrySelect.querySelector(`option[value="${countryCode}"]`)) {
+                countrySelect.value = countryCode;
+            }
+        }
+
         // Setup form submission handler
         const form = document.getElementById('profile-edit-form');
         if (form) {
             form.addEventListener('submit', this.handleProfileUpdate.bind(this));
         }
-        
+
         // With modal-based MFA, no need for real-time form updates
     },
 
@@ -196,31 +240,45 @@ const Dashboard = {
      */
     async handleProfileUpdate(event) {
         event.preventDefault();
-        
+
         const formData = new FormData(event.target);
+
+        // Handle phone number combination
+        const countryCode = document.getElementById('edit-country-code').value;
+        const phoneInput = document.getElementById('edit-phone').value.trim();
+
+        let formattedPhone = null;
+        if (phoneInput) {
+            if (!isValidPhone(phoneInput)) {
+                showToast('Please enter a valid phone number (digits only)', 'error');
+                return;
+            }
+            formattedPhone = formatPhoneNumber(countryCode, phoneInput);
+        }
+
         const updateData = {
             username: formData.get('username').trim(),
             email: formData.get('email').trim(),
-            phoneNumber: formData.get('phoneNumber').trim()
+            phoneNumber: formattedPhone
         };
 
         try {
             showLoading();
-            
+
             const response = await api.put(CONFIG.ENDPOINTS.USER_PROFILE, updateData);
-            
+
             if (response.data) {
                 // Update the stored profile data
                 this.userProfile = response.data;
-                
+
                 // Re-render the profile view
                 this.renderUserProfile();
-                
+
                 // Switch back to view mode
                 exitProfileEditMode();
-                
+
                 showToast('Profile updated successfully!', 'success');
-                
+
                 // Reload audit logs to show the update activity
                 await this.loadAuditLogs();
             } else {
@@ -229,7 +287,7 @@ const Dashboard = {
                 await this.loadUserProfile();
                 exitProfileEditMode();
             }
-            
+
         } catch (error) {
             console.error('Error updating profile:', error);
             showToast(error.message || 'Failed to update profile', 'error');
@@ -256,7 +314,7 @@ const Dashboard = {
         }
 
         const webAuthnCount = this.mfaStatus.webAuthnCredentials ? this.mfaStatus.webAuthnCredentials.length : 0;
-        
+
         container.innerHTML = `
             <div class="mfa-status-grid">
                 <div class="mfa-status-item">
@@ -341,7 +399,7 @@ const Dashboard = {
 
         // Show only the 10 most recent logs
         const recentLogs = this.auditLogs.slice(0, 10);
-        
+
         container.innerHTML = `
             <div class="audit-logs-list">
                 ${recentLogs.map(log => `
@@ -406,7 +464,7 @@ const Dashboard = {
     setupDashboard() {
         // Setup change password form
         setupChangePasswordForm();
-        
+
         // Add any additional dashboard-specific event listeners here
         console.log('Dashboard setup complete');
     },
@@ -469,7 +527,7 @@ async function toggleMFA() {
 
     const isEnabled = Dashboard.mfaStatus.mfaEnabled;
     const action = isEnabled ? 'disable' : 'enable';
-    
+
     if (!confirm(`Are you sure you want to ${action} multi-factor authentication?`)) {
         return;
     }
@@ -480,21 +538,21 @@ async function toggleMFA() {
             showToast('MFA disabled successfully', 'success');
         } else {
             // For enabling MFA, we need to specify a preferred method
-            const preferredMethod = Dashboard.mfaStatus.webAuthnCredentials && Dashboard.mfaStatus.webAuthnCredentials.length > 0 
-                ? 'WEBAUTHN' 
+            const preferredMethod = Dashboard.mfaStatus.webAuthnCredentials && Dashboard.mfaStatus.webAuthnCredentials.length > 0
+                ? 'WEBAUTHN'
                 : 'OTP_EMAIL';
-            
+
             await api.post(CONFIG.ENDPOINTS.MFA_ENABLE, { preferredMethod });
             showToast(`MFA enabled with ${preferredMethod}`, 'success');
         }
-        
+
         // Reload MFA status, user profile, and audit logs to show the activity
         await Dashboard.loadMfaStatus();
         await Dashboard.loadUserProfile(); // This updates Dashboard.userProfile.mfaEnabled
         await Dashboard.loadAuditLogs();
-        
+
         // With modal-based MFA, no need for form updates
-        
+
     } catch (error) {
         console.error('Error toggling MFA:', error);
         showToast(error.message || `Failed to ${action} MFA`, 'error');
@@ -508,7 +566,7 @@ async function testEmailOTP() {
     try {
         await api.post(CONFIG.ENDPOINTS.OTP_SEND, { method: 'EMAIL' });
         showToast('Test OTP sent to your email', 'success');
-        
+
         // Refresh audit logs to show the OTP sent activity
         await Dashboard.loadAuditLogs();
     } catch (error) {
@@ -535,7 +593,7 @@ async function handleShowPreferredMethodModal() {
 async function showPreferredMethodModal() {
     // Refresh MFA status to get latest WebAuthn credentials before showing modal
     await Dashboard.loadMfaStatus();
-    
+
     // Update the modal radio buttons based on current status
     updateModalPreferredMethodSelection();
     showModal('preferred-method-modal');
@@ -548,16 +606,16 @@ function updateModalPreferredMethodSelection() {
     if (!Dashboard.mfaStatus) return;
 
     const currentMethod = Dashboard.mfaStatus.preferredMethod;
-    
+
     // Update radio button selection in modal
     const radioButtons = document.querySelectorAll('input[name="modal-preferred-method"]');
     radioButtons.forEach(radio => {
         radio.checked = radio.value === currentMethod;
-        
+
         // Check if this method is available
         const isAvailable = Dashboard.isMethodAvailable(radio.value);
         radio.disabled = !isAvailable;
-        
+
         // Update visual state
         const methodOption = radio.closest('.method-option');
         if (methodOption) {
@@ -571,14 +629,14 @@ function updateModalPreferredMethodSelection() {
  */
 async function updatePreferredMethodFromModal() {
     const selectedMethod = document.querySelector('input[name="modal-preferred-method"]:checked');
-    
+
     if (!selectedMethod) {
         showToast('Please select a preferred method', 'error');
         return;
     }
 
     const methodValue = selectedMethod.value;
-    
+
     // Check if method is available
     if (!Dashboard.isMethodAvailable(methodValue)) {
         showToast('Selected method is not available. Please set it up first.', 'error');
@@ -587,22 +645,22 @@ async function updatePreferredMethodFromModal() {
 
     try {
         showLoading();
-        
+
         const response = await api.put(CONFIG.ENDPOINTS.MFA_PREFERRED_METHOD, {
             preferredMethod: methodValue
         });
 
         showToast('Preferred MFA method updated successfully', 'success');
-        
+
         // Close modal
         closeModal('preferred-method-modal');
-        
+
         // Reload MFA status and audit logs to show the activity
         await Dashboard.loadMfaStatus();
         await Dashboard.loadAuditLogs();
-        
+
         // With modal-based MFA, no need for form updates
-        
+
     } catch (error) {
         console.error('Error updating preferred method:', error);
         showToast(error.message || 'Failed to update preferred method', 'error');
@@ -616,7 +674,7 @@ async function updatePreferredMethodFromModal() {
 // Add CSS for dashboard components
 function addDashboardStyles() {
     if (document.querySelector('#dashboard-styles')) return;
-    
+
     const style = document.createElement('style');
     style.id = 'dashboard-styles';
     style.textContent = `
@@ -1085,9 +1143,9 @@ function toggleProfileEdit() {
     const viewMode = document.getElementById('profile-view');
     const editMode = document.getElementById('profile-edit');
     const editBtn = document.getElementById('edit-profile-btn');
-    
+
     if (!viewMode || !editMode || !editBtn) return;
-    
+
     if (viewMode.style.display === 'none') {
         // Switch to view mode
         exitProfileEditMode();
@@ -1104,7 +1162,7 @@ function enterProfileEditMode() {
     const viewMode = document.getElementById('profile-view');
     const editMode = document.getElementById('profile-edit');
     const editBtn = document.getElementById('edit-profile-btn');
-    
+
     if (viewMode && editMode && editBtn) {
         viewMode.style.display = 'none';
         editMode.style.display = 'block';
@@ -1119,7 +1177,7 @@ function exitProfileEditMode() {
     const viewMode = document.getElementById('profile-view');
     const editMode = document.getElementById('profile-edit');
     const editBtn = document.getElementById('edit-profile-btn');
-    
+
     if (viewMode && editMode && editBtn) {
         viewMode.style.display = 'block';
         editMode.style.display = 'none';

@@ -142,7 +142,14 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
+  
+  mail:
+    enabled: false # Use Mock Inbox in Dev
+
+  sms:
+    enabled: true
+    provider: mock
 
 logging:
   level:
