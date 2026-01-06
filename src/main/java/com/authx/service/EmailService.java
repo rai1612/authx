@@ -177,10 +177,13 @@ public class EmailService {
         }
     }
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
+
     private String buildPasswordResetEmailContent(String username, String token) {
         // In production, this should be a proper HTML template with a frontend URL
         // We use /?token=... so index.html loads and auth.js logic picks it up
-        String resetUrl = "http://localhost:3000/?token=" + token;
+        String resetUrl = frontendUrl + "/?token=" + token;
 
         return String.format("""
                 Hello %s,
